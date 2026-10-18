@@ -1,0 +1,129 @@
+# JoyKeyboard 0.4.1 verification
+
+Delivered `dist/0.4.1/JoyKeyboard-Setup.exe`, **318,605,911 bytes**. SHA-256: `2b5d1fd2674e43cc8493ecb31b31b0211a51fea1dac7578c78530367dc9f02bb`.
+
+## Developer credit
+
+Added **Developed by Sohaib Islam Joy** and `https://www.facebook.com/sohaib.islam1997` to Help, the bar's developer-credit route, README and installer. Installer welcome text includes the credit and URL; Windows uninstall metadata identifies Sohaib Islam Joy as publisher and includes the requested Facebook publisher link. UI routing/link assertions and actual installed publisher registry values passed.
+
+## Manual keyboard fixes and evidence
+
+- Reproduced English pass-through with keyboard ON using real Windows virtual-key input into a separate native Edit window. The hook rejected all events marked injected, including remapped/on-screen input. Output now carries JoyKeyboard's own `dwExtraInfo` marker; only that output is ignored for composition, preventing recursion while allowing external virtual-key input. Injected F12 remains excluded from mode toggling.
+- A fast multiword test then reproduced dropped letters: native caret movement from JoyKeyboard's previous insertion arrived after the next composition started. It was mistaken for a user caret movement, discarding the first letter. The commit path now pumps pending hook input and allows bounded native caret settling (20ms stable within a 100ms limit) before beginning another word. Focus/password checks remain enforced. Slow/custom editors may still require different integration; this is a Windows hook, not TSF inline composition.
+- Dictionary loading/fuzzy suggestions run on a separate worker, without delaying word insertion. Only the latest queued request is retained; revision checks reject stale candidates after commit/clear. A blocking-suggestion regression test proves the word can commit before suggestions finish and old candidates do not return.
+- Actual source Windows-event test passed five consecutive runs, including multiword Bangla at 3ms key intervals, Backspace correction and native password pass-through. A deliberate 1.4-second initial suggestion delay also passed without blocking composition. `artifacts/keyboard-event-check.json`.
+- **Packaged application** launched with fresh settings and System32-only PATH. Test clicked its real floating-bar keyboard button, then sent virtual-key events through Windows into a separate native editor. Result: `আমি বাংলায় লিখি আমি বাংলা আমি `. Fast multiword typing, Backspace and unchanged Latin input in a native password field passed. No direct composition calls or recognition stubs used: `artifacts/packaged-keyboard-event-check.json`.
+- Existing native hook/output suite rerun: phonetic, English, fixed layout, snippets, candidates, F12, Bijoy output, password guard and balanced deferred modifiers passed: `artifacts/keyboard-native-result.json`. That broader suite feeds physical-event decisions directly and verifies actual native output; it does not prove physical hardware.
+- Pending words still appear in the bar until Space/Enter or a candidate commits them. Example: enable **Bangla phonetic**, turn keyboard ON, type `ami`, then Space to insert `আমি`.
+
+Threading reference: [Microsoft LowLevelKeyboardProc guidance](https://learn.microsoft.com/en-us/windows/win32/winmsg/lowlevelkeyboardproc).
+
+## Release validation
+
+- **147 pytest cases passed**, `artifacts/tests-0.4.1.log`. Changed product files, tests and probes passed Ruff; `pip check` passed.
+- Clean PyInstaller rebuild and Inno Setup compilation succeeded. Final embedded modules/main matched current source and required assets were verified: `artifacts/package-code-check.json`.
+- Fresh-folder packaged UI, offline Base English, Google Bengali, automatic-pause Bengali and normal startup/graceful shutdown passed with no Python on PATH and no model downloads: `artifacts/standalone-check.json`.
+- Actual 0.4.1 installer install/reinstall/uninstall passed, including developer publisher/Facebook values, autostart checked by default, unchecked task removing startup, and uninstall preserving settings/removing startup. Original startup/shortcut state restored: `artifacts/installer-check.json`.
+- Fresh installed idle working set **121.46 MiB**, private commit **67.46 MiB**. Ten-second CPU sample reported 0 seconds at Windows timer resolution; do not interpret this as a zero-CPU guarantee. Earlier 0.4.0 idle comparisons below remain historical measurements.
+
+No live physical keyboard, complete browser/editor matrix, second PC or sign-in reboot test. Installer remains unsigned. Prior live microphone/loopback and speech-quality limitations still apply. Existing user apps were not force-terminated.
+
+# Historical 0.4.0 verification
+
+Delivered `dist/0.4.0/JoyKeyboard-Setup.exe`, **318,579,537 bytes**. SHA-256: `25e319774509761a33c016162f2faad7c2e42e03c28a81ad26a7f962e26d1819`.
+
+Built/tested on Windows 11, AMD Ryzen 9 7900X (24 logical processors), Python 3.12.10 x64, PySide6 6.12.0, PyInstaller 6.22.3, Inno Setup 6.7.3. Target: Windows 10 1809+/11 Intel/AMD x64; no low-end hardware certification.
+
+## Current installer and startup checks
+
+Actual installer executed in a disposable folder containing spaces. Evidence: `artifacts/installer-check.json` and the recorded test folder's install logs.
+
+- Saved installer INF and HKCU Run value confirm startup is selected by default and the executable path is quoted correctly.
+- Installer bundles Python, native runtime, dictionaries and Base/Tiny models. Runtime stays installed; subsequent launches avoid one-file extraction. Distribute only the setup EXE; it creates its installed files automatically.
+- Installed UI launched without Python on PATH, with fresh application data. Normal launch initialized the actual keyboard hook and closed gracefully, saving dictionary data.
+- Reinstalling with startup unchecked removed its existing Run entry.
+- After startup was re-enabled, uninstall removed the entry even though the last installer task was unchecked. Uninstall removed app files and preserved user data.
+- Test restored original startup registry state and any existing Start Menu shortcut. No sign-out or reboot performed.
+- Preferences controls the same Run value. A real disposable registry test covers enable/disable, repeated disable and quoted paths. UI test covers checkbox wiring and error rollback. Startup never enables recording.
+- Build script parsed successfully; clean PyInstaller and Inno compilation passed. Compiler downloaded from official release; Authenticode status verified Valid before use.
+
+## Current appearance and resource checks
+
+- Default bar **384 × 48 logical pixels**, previously 504 × 74. Icon brand, solid surface, fine border; no drop shadow, blur or idle animation. Delivered screenshot inspected: `artifacts/installed-bar.png`.
+- Menu and Preferences offer 70/80/90/100% opacity. Default 100% is opaque within rounded shell. Tests execute live changes, persistence validation and invalid/invisible value recovery.
+- Regression test confirms 100 unchanged syncs perform no bar layout work; recording controls fit without overlap. Dictionaries load on first suggestions request; startup and voice learning avoid that memory cost.
+- Numerical pools bounded by default (OpenBLAS one thread, OMP two; explicit environment settings respected). Offline Whisper uses at most two CPU threads, scaled down on smaller CPUs. Models and loaded dictionaries stay resident for reuse, so recording/transcription and subsequent idle memory can exceed fresh-start figures.
+
+Ten-second visible-idle measurements:
+
+| Measurement | Before, source | After, source with thread limits | Installed app |
+| --- | ---: | ---: | ---: |
+| Working set | 194.81 MiB | 125.61 MiB | 121.26 MiB |
+| Private committed memory | 879.15 MiB | 72.43 MiB | 67.30 MiB |
+| CPU, percent of one core | 9.526% | 0.469% | 0.469% |
+
+Evidence: `artifacts/idle-before.json`, `artifacts/idle-after.json`, `artifacts/idle-after-bounded.json`, `artifacts/installer-check.json`; source script: `tests/idle_probe.py`. Source probe uses smoke mode with foreground/shortcut polling, without another system hook. Installed measurement uses normal startup and actual hook. Single short samples on development hardware with ordinary background activity, not performance ceilings or low-end-PC certification.
+
+## Current regression and packaged execution
+
+- **144 pytest cases passed.** Includes existing keyboard, tools, data protection, voice lifecycle/cancellation, Windows input guards, auto-finish and new opacity/startup checks. Two upstream Python 3.12 deprecation warnings remain (`aifc`, `audioop`).
+- Ruff passed for changed product files, changed unit tests and package audit scripts. `pip check` passed.
+- Embedded code from ten modules plus main matched final source. Required dictionaries, icons, licenses and model weights verified in payload. `artifacts/package-code-check.json`.
+- Full installed runtime copied into a fresh folder; PATH limited to System32, no PYTHONPATH/PYTHONHOME, empty LOCALAPPDATA, downloads disabled. UI, bundled Base offline English, Google Bengali, automatic-pause Bengali and normal startup/graceful quit all passed: `artifacts/standalone-check.json`. Installed EXE needs its installed `_internal` folder; the single setup EXE includes both.
+- Public Bengali replay passed full Qt flow: one Speak click, zero Finish clicks, actual local Silero and Google recognition, hidden studio. `artifacts/auto-pause-flow.json`. Packaged detector found speech ending at 9.75 seconds and finished capture at 11.25 seconds: `artifacts/standalone-auto-pause.json`.
+- Native mouse injection into owned bar preserved separate editor focus and delivered Bengali while studio stayed hidden: `artifacts/floating-native-result.json`. Recognition stubbed only for this focus test; no live microphone captured.
+
+No second PC/VM/old CPU, live user microphone quality, physical keyboard across all apps, real speaker-loopback quality or live Gemini key tested. Installer unsigned. Offline Bengali accuracy remains poor; Google web mode remains experimental. No perfect recognition or universal-PC guarantee. Existing user processes were not force-terminated.
+
+# Historical 0.3.1 verification
+
+Details below describe the previous portable release, not the current installer. Relevant unit tests were rerun above; older broad hardware/encoding experiments were not all repeated for this update.
+
+Release: `dist/0.3.1/JoyKeyboard.exe`, 371,784,415 bytes. SHA-256: `f48c49a596770cd311f33bf5e56e251da1d1c1147814d31ae740ad126e549879`. All five clean-folder executable checks passed; `artifacts/standalone-check.json`. The older running copy was preserved.
+
+## Passed
+
+- 138 pytest cases: composition, four layouts, suggestion/word/snippet persistence, bounded encoding conversion, Word/DocPad data-loss guards, tools, mocked microphone/loopback lifecycle, cancellation, output encoding, Windows input guards, and normal-startup/duplicate-instance locking.
+- Ruff and `pip check` clean. Two upstream Python 3.12 deprecation warnings (`aifc`, `audioop`) remain.
+- Common Unicode/Bijoy roundtrip: 2,000 frequent Bengali words, zero mismatches. This does not certify arbitrary legacy fonts or mixed text.
+- Installed real Windows keyboard hook plus actual output into a separate owned native editor: Bangla/English/fixed layout, snippets, F1/F12, modifiers, Bijoy, injected-event bypass, native password guard. Evidence: `artifacts/keyboard-native-result.json`. Trusted physical keyboard hardware was NOT simulated: composition decisions were fed explicitly, then Windows injection delivered actual output.
+- Source normal startup with actual hook, fresh user data and graceful shutdown saved dictionary: `artifacts/source-normal-launch.json`.
+- Source screenshots inspected for voice, keyboard, screen keys and DocPad; all six tools tabs rendered. Small displays use scrolling.
+- Original multi-size ICO/PNG/SVG validated. Bundled keyboard data, licenses, Base/Tiny model weights and final Python code inspected in executable archive: `artifacts/package-code-check.json`.
+
+## Floating bar
+
+- Default launch is a 504 by 74 logical-pixel frameless, always-on-top bar. Position persistence, offscreen recovery, language/layout/engine/output menus, every tool route, recording/cancel/finish, eight clickable suggestions, workspace-close/draft retention and feedback copying were executed. Evidence: `artifacts/tests-floating.log`, `artifacts/tests-floating-ui.log`.
+- Native Windows mouse injections clicked only the owned floating bar. Showing it, toggling keyboard and starting/finishing voice preserved the separate editor's focus. A fixture speech result was inserted into that editor while the studio remained hidden. No microphone audio was captured for this UI-flow test. Evidence: `artifacts/floating-native-result.json`.
+- Idle, recording, suggestions and menu screenshots inspected: `artifacts/floating-source.png`, `artifacts/floating-recording.png`, `artifacts/floating-candidates.png`, `artifacts/floating-menu.png`.
+- Workspace close hides to the bar. Explicit Quit retains unsaved-draft checks and worker cancellation/shutdown. Tray restores the bar; hiding disabled during voice work or without a usable tray.
+
+## Automatic finish
+
+- Auto-finish defaults on, including migration from older settings. Local Silero VAD detects about 1.5 seconds after speech; no Finish click required. Each phrase stops the microphone; continuous listening is not implemented. Manual Finish, cancel, disabled auto-finish, hold-until-release and the 60-second cap remain available. No speech for 10 seconds cancels locally. Detector failures leave manual Finish available.
+- Regression tests cover short silence, resumed speech, rolling-window absolute offsets, stop/error handling, UI auto-finish dispatch, local empty cancellation, hold-release precedence, preference validation and menu toggling. Tests now isolate real-user Caps Lock/settings from unit fixtures.
+- Actual Bengali fixture tested at 16,000 / 44,100 / 48,000 Hz; quieter speech plus generated noise; silence/noise-only cancellation: `artifacts/pause-calibration.json`. Calibration used generated/public audio, not the live microphone.
+- Full Qt flow with real Silero and Google recognition passed with one Speak click, zero Finish clicks, accelerated recorded-fixture input, hidden workspace: `artifacts/auto-pause-flow.json`.
+- Delivered one-file EXE automatically detected the recorded Bengali phrase ending at 9.75 seconds and finished at 11.25 seconds, then Google returned the full readable Bengali sentence. `artifacts/standalone-auto-pause.json`. No external VAD download/key needed.
+
+## Voice evidence
+
+- Three public Google FLEURS Bengali read-speech samples produced readable Bengali using Google web HTTPS recognition, with errors. Source evidence: `artifacts/bengali-recognition.json`, `artifacts/bengali-google-third.json`; fixture provenance: `artifacts/bengali-fixtures.json`.
+- Offline Base and Small Bengali tests were poor, including Latin transliteration, wrong scripts and hallucinations. Float32/prompt experiment also failed. Larger is not a guaranteed fix. Offline Bengali is explicitly flagged as unreliable in the app/README; online is recommended.
+- Actual Base CPU/int8 recognition correctly transcribed an 11-second public English JFK fixture, both source and standalone EXE. Source URL/provenance: `artifacts/recognition-smoke.json`.
+- One-file Windows Google encoder failure was reproduced and fixed by owning stdin/stdout/stderr handles for the bundled FLAC subprocess. Regression test verifies pipes and a lossless FLAC roundtrip.
+- Final standalone results: `artifacts/standalone-offline-english.json`, `artifacts/standalone-online-bengali.json` and `artifacts/standalone-check.json`. Clean test copies ONLY the EXE outside the project, limits PATH to Windows System32, removes PYTHONPATH/PYTHONHOME, starts with empty LOCALAPPDATA and disables model downloads. It exercises UI, bundled offline English, online Bengali, normal hook startup and graceful close.
+
+## Boundaries
+
+Test machine: this Windows 11 Intel/AMD x64 PC. No clean VM or second physical PC tested. Windows 10 1809+/11 x64 is the supported target, not every operating system/CPU. Python and GPU not required by the bundle. One-file extraction needs temporary disk space and increases startup time.
+
+Live user microphone quality, real speaker loopback, physical keyboard behavior across applications and Gemini with a live key are not tested. Capture/backend mock tests and public recorded fixtures cannot certify these. FLEURS samples are Indian Bengali read speech, not a Bangladeshi dialect/noise benchmark.
+
+Google web access needs no user key but is experimental and can be limited or stopped. Offline processing requires suitable hardware and has poor Bengali quality in the checks above. No perfect recognition guarantee.
+
+Full typing utility, without a claim of exact Kontho parity: four layouts, printable/Shift fixed positions, word-level composition, local suggestions/correction/learning, snippets, encoding, screen text keys, DocPad/PDF and optional text assistant. No TSF IME registration, AltGr/keypad layout extensions or universal custom/password/editor compatibility. Elevated applications can reject simulated input.
+
+Words/history/transitions are stored locally after commits, including successful voice text. Audio is not saved automatically. Online engines upload only when explicitly selected/submitted. Gemini key session-only. Shutdown waits for outstanding work; cancelled results are suppressed, but underlying network/model calls may finish later.
+
+Unsigned EXE; no signing certificate or SmartScreen reputation created. Older ZIP and 0.2 studio-first output are superseded; deliver `dist/JoyKeyboard.exe` only.

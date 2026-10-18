@@ -1,0 +1,14 @@
+LGPL-3.0.txt
+https://raw.githubusercontent.com/qt/qtbase/dev/LICENSES/LGPL-3.0-only.txt
+GPL-3.0.txt
+https://raw.githubusercontent.com/qt/qtbase/dev/LICENSES/GPL-3.0-only.txt
+CTranslate2-LICENSE.txt
+https://raw.githubusercontent.com/OpenNMT/CTranslate2/master/LICENSE
+FlatBuffers-LICENSE.txt
+https://raw.githubusercontent.com/google/flatbuffers/master/LICENSE
+Tokenizers-LICENSE.txt
+https://raw.githubusercontent.com/huggingface/tokenizers/main/LICENSE
+Tqdm-LICENCE.txt
+https://raw.githubusercontent.com/tqdm/tqdm/master/LICENCE
+PortAudio-LICENSE.txt
+https://raw.githubusercontent.com/PortAudio/portaudio/master/LICENSE.txt

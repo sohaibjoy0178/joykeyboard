@@ -1,0 +1,15 @@
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+build/
+dist/
+*.log
+artifacts/
+tools/
+assets/models/*/model.bin
+.env
+.env.*
+!.env.example
+settings.json
+keyboard-data.json

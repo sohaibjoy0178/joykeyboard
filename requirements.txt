@@ -1,0 +1,12 @@
+# Python 3.12 x64. Direct dependencies pinned; requirements-lock.txt captures the tested build.
+PySide6_Essentials==6.12.0
+sounddevice==0.5.6
+SpeechRecognition==3.17.0
+faster-whisper==1.2.1
+SoundCard==0.4.6
+avro-py==2025.11.3
+# faster-whisper 1.2.1 audio decode requires the PyAV 16 API.
+av==16.0.1
+numpy==2.5.4
+pyinstaller==6.22.3
+pytest==9.1.1

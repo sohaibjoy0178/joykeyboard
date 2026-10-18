@@ -1,0 +1,6 @@
+FFmpeg runtime supplied by PyAV 16.0.1
+License: LGPL version 3 or later
+Library versions: {'libavutil': (60, 8, 100), 'libavcodec': (62, 11, 100), 'libavformat': (62, 3, 100), 'libavdevice': (62, 1, 100), 'libavfilter': (11, 4, 100), 'libswscale': (9, 1, 100), 'libswresample': (6, 1, 100)}
+Configuration: --disable-static --enable-shared --libdir=/c/cibw/vendor/lib --prefix=/c/cibw/vendor --disable-programs --disable-doc --disable-libxml2 --disable-lzma --disable-libtheora --disable-libfreetype --disable-libfontconfig --disable-libbluray --disable-libopenjpeg --enable-mediafoundation --enable-version3 --enable-gmp --disable-alsa --disable-gnutls --enable-libaom --enable-libdav1d --enable-libmp3lame --enable-libopencore-amrnb --enable-libopencore-amrwb --enable-libopus --enable-libspeex --enable-libsvtav1 --enable-libtwolame --enable-libvorbis --enable-libvpx --enable-libwebp --enable-libopenh264 --disable-libxcb --enable-zlib --enable-libx264 --enable-libx265 --enable-nvenc --enable-nvdec --disable-encoder='avui,dca,mlp,opus,s302m,sonic,sonic_ls,truehd,vorbis' --disable-decoder=sonic --disable-libjack --disable-indev=jack
+Source: https://ffmpeg.org/download.html#get-sources
+Wheel build recipes: https://github.com/PyAV-Org/pyav-wheels
