@@ -47,6 +47,7 @@ Use a solid charcoal surface and one fine edge, without blur, shadows, gradients
 Rounded controls and recording panel echo the icon. Transcript text area stays generous and simple.
 
 ## Components
+Preferences includes a single-chord global voice shortcut recorder, Apply and Reset buttons, and an inline registration status. Default Ctrl+Alt+Space toggles start/finish. Windows registers the chord globally, prevents repeat while held, and reports conflicts without replacing the previous working shortcut. Reflect the saved shortcut in bar, tray and studio hints. Editing a shortcut never starts recording; restart restores it.
 Original mark opens the workspace; direct language/layout selectors, keyboard toggle, primary Speak/Finish control, menu and hide control. Match icon strokes at 1.7 logical pixels; use native Windows fonts with Bengali fallback. Tooltips and accessible names describe every icon control. The menu reaches every existing tool, engine, input/output choice, preferences, privacy and Quit. Recording exposes cancel, timer and level. Composition exposes eight clickable candidates. Ready transcripts expose Copy/Open. Errors remain visible until dismissed or replaced; routine status clears after a short delay. All controls reflect the same existing application state.
 
 ## Do's and Don'ts

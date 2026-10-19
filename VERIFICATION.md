@@ -1,4 +1,28 @@
-# JoyKeyboard 0.4.1 verification
+# JoyKeyboard 0.4.2 verification
+
+Delivered `dist/0.4.2/JoyKeyboard-Setup.exe`, **318,595,240 bytes**. SHA-256: `81bba8b113debe76bfdae1a7d7f7717bdec46db7f752d16d4a675382d4bb2232`.
+
+## Custom global voice shortcut
+
+Preferences now records one chosen key chord with Apply and Reset default. Default Ctrl+Alt+Space toggles start/finish; the same shortcut is shown in studio, tray, bar tooltip and the bar's shortcut-settings route. The shortcut is persisted and restored at startup. Editing the field does not activate the microphone. F12 remains keyboard mode; bare F1–F8 remain suggestion selection. Ordinary unmodified typing and invalid/multi-step/reserved combinations are rejected.
+
+Windows RegisterHotKey with MOD_NOREPEAT delivers WM_HOTKEY to Qt's native event filter. Replaces the former 40ms voice-key polling, so quick presses do not depend on a polling tick. Failed registration preserves the previous chord; failed settings saves restore it. Closing the app releases registration. Right-Ctrl hold recording and automatic pause finishing remain available. Disable automatic finishing if only the global shortcut should finish a clip.
+
+Execution evidence:
+
+- **169 pytest cases passed**, `artifacts/tests-0.4.2.log`: migration/validation, conflict handling, real Windows competing registrations/release, native-message routing, rollback on save failure, actual shortcut-editor key capture/Apply, live hints/reset and edit-without-recording. Existing keyboard/voice/tools protections passed too.
+- Full native global start/finish flow against a separate owned editor, with the bar initially hidden and keyboard mode ON. Actual global chord started recording, repeated down event did not stop it, release/new press finished it, Bengali transcript was inserted into the original editor, and keyboard mode resumed. Microphone and speech recognition were fixture stubs for this test; actual Windows registration, Qt events, input hook and Unicode insertion were used. `artifacts/voice-shortcut-check.json`.
+- Actual packaged app launched with saved Ctrl+Alt+Shift+F9 and System32-only PATH. After hiding its bar to the tray, Windows key input triggered the saved shortcut and revealed the missing-model error. An intentionally absent Small model prevented any microphone capture. This verifies packaged registration/restoration and hidden-bar dispatch; complete start/finish uses the source-flow fixture test above. Manual multiword Bangla, fast input, Backspace and native password pass-through also passed: `artifacts/packaged-keyboard-event-check.json`.
+- Delivered embedded code matched all eleven current modules plus main; models/assets verified. `artifacts/package-code-check.json`.
+- Fresh-folder packaged UI, bundled offline Base English, Google Bengali, automatic-pause Bengali, normal hook startup and graceful shutdown passed: `artifacts/standalone-check.json`. No model downloads or Python on PATH.
+- Real installer install/reinstall/uninstall passed with autostart and developer/Facebook values intact; preserves settings and restores test registry/shortcut state. `artifacts/installer-check.json`. Fresh installed idle working set 122.51 MiB, private commit 66.88 MiB; short ten-second sample CPU 1.094% of one core on this PC, not a performance ceiling.
+- Clean PyInstaller/Inno builds, Ruff and pip dependency check passed. Preferences screenshot inspected: `artifacts/shortcut-settings.png`.
+
+References: [Microsoft RegisterHotKey](https://learn.microsoft.com/en-us/windows/win32/api/winuser/nf-winuser-registerhotkey), [Qt QKeySequenceEdit](https://doc.qt.io/qtforpython-6/PySide6/QtWidgets/QKeySequenceEdit.html).
+
+Windows secure desktops/lock screens cannot use the app shortcut. Protected/elevated/custom fields can still reject insertion; transcript stays available. No live physical-keyboard, all-app matrix, second-PC or reboot test. Installer unsigned. Existing user apps were not terminated. Existing speech-quality limitations remain.
+
+# Historical 0.4.1 verification
 
 Delivered `dist/0.4.1/JoyKeyboard-Setup.exe`, **318,605,911 bytes**. SHA-256: `2b5d1fd2674e43cc8493ecb31b31b0211a51fea1dac7578c78530367dc9f02bb`.
 

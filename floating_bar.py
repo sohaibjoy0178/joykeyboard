@@ -254,6 +254,7 @@ class CompactBar(QWidget):
                  owner.record_btn.isEnabled(), owner.cancel_btn.isEnabled(),
                  owner.tray.isVisible(), owner.transcript.document().isEmpty(),
                  owner.settings["bar_opacity"])
+        state += (owner.settings["voice_shortcut"],)
         if state == self._last_state:
             return
         self._last_state = state
@@ -271,7 +272,7 @@ class CompactBar(QWidget):
         self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic", "#26351B"))
         self.record.setText("Finish" if recording else "Working" if busy else "Speak")
         self.record.setEnabled(owner.record_btn.isEnabled())
-        self.record.setAccessibleName("Finish and transcribe" if recording else "Start voice typing · Ctrl+Alt+Space")
+        self.record.setAccessibleName(f"{'Finish and transcribe' if recording else 'Start voice typing'} · {owner.settings['voice_shortcut']}")
         self.record.setToolTip(self.record.accessibleName())
         self.cancel.setVisible(owner.cancel_btn.isEnabled())
         self.cancel.setEnabled(owner.cancel_btn.isEnabled())
@@ -358,7 +359,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.1", lambda: None, enabled=False)
+        self._action(menu, "JoyKeyboard  0.4.2", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):
@@ -377,6 +378,7 @@ class CompactBar(QWidget):
         self._action(menu, "Finish on speech pause", owner.auto_pause.setChecked,
                      checked=owner.auto_pause.isChecked(), enabled=owner.auto_pause.isEnabled())
         menu.addSeparator()
+        self._action(menu, f"Voice shortcut: {owner.settings['voice_shortcut']}…", lambda: owner.open_workspace(2))
         self._choices(menu.addMenu("Bar opacity"), owner.bar_opacity)
         self._action(menu, "Preferences", lambda: owner.open_workspace(2))
         self._action(menu, "Help and privacy", lambda: owner.open_workspace(3))

@@ -8,7 +8,7 @@ import time
 from pathlib import Path
 
 from PySide6.QtCore import QLockFile, Qt, QThread, QTimer, Signal
-from PySide6.QtGui import QAction, QIcon, QPixmap
+from PySide6.QtGui import QAction, QIcon, QKeySequence, QPixmap
 from PySide6.QtWidgets import (
     QApplication,
     QCheckBox,
@@ -16,6 +16,7 @@ from PySide6.QtWidgets import (
     QFileDialog,
     QFrame,
     QHBoxLayout,
+    QKeySequenceEdit,
     QLabel,
     QMainWindow,
     QMenu,
@@ -32,14 +33,17 @@ from PySide6.QtWidgets import (
 
 import startup
 from core import (
+    DEFAULT_VOICE_SHORTCUT,
     data_directory,
     format_rules,
     load_settings,
     parse_rules,
+    parse_voice_shortcut,
     process_text,
     save_settings,
 )
 from floating_bar import CompactBar
+from hotkeys import VoiceHotkey
 from keyboard_engine import LAYOUTS, KeyboardEngine, to_ansi
 from keyboard_hook import KeyboardHook
 from tools_ui import KeyboardTools
@@ -140,7 +144,7 @@ class JoyWindow(QMainWindow):
         self.quitting = False
         self.target = None
         self.last_external = None
-        self.last_hotkey = False
+        self.voice_hotkey = None
         self.last_hold = False
         self.started = 0.0
         self.last_text = ""
@@ -170,6 +174,13 @@ class JoyWindow(QMainWindow):
             except RuntimeError as exc:
                 warning = f"Keyboard hook unavailable: {exc}"
             self.poll.start(40)
+            self.voice_hotkey = VoiceHotkey(int(self.winId()), self.voice_shortcut_triggered)
+            try:
+                self.voice_hotkey.register(self.settings["voice_shortcut"])
+                self.shortcut_status.setText(f"Active globally: {self.settings['voice_shortcut']} · press to start / finish")
+            except OSError as exc:
+                self.shortcut_status.setText(str(exc))
+                warning = str(exc)
         if warning:
             self.set_status("Preferences recovered", warning, True)
         if self.keyboard_engine.load_error:
@@ -263,7 +274,8 @@ class JoyWindow(QMainWindow):
         self.auto_type.setChecked(self.settings["auto_type"])
         self.auto_type.setToolTip("Uses the last focused external window. A change to another app blocks insertion; transcript stays available.")
         controls.addWidget(self.auto_type)
-        controls.addWidget(label("Ctrl + Alt + Space  ·  record / finish\nEsc in studio  ·  cancel", "muted", True))
+        self.shortcut_hint = label(f"{self.settings['voice_shortcut']}  ·  record / finish\nEsc in studio  ·  cancel", "muted", True)
+        controls.addWidget(self.shortcut_hint)
         controls.addStretch()
         left = QWidget()
         left.setLayout(controls)
@@ -277,7 +289,7 @@ class JoyWindow(QMainWindow):
         caption.addWidget(self.word_count)
         right.addLayout(caption)
         self.transcript = QPlainTextEdit()
-        self.transcript.setPlaceholderText("Your words, clearly.\n\nChoose a language, focus your document, then use Ctrl + Alt + Space.\n\nThe transcript stays here if typing is blocked.")
+        self.transcript.setPlaceholderText(f"Your words, clearly.\n\nChoose a language, focus your document, then use {self.settings['voice_shortcut']}.\n\nThe transcript stays here if typing is blocked.")
         self.transcript.setAccessibleName("Editable recognition transcript")
         self.transcript.textChanged.connect(lambda: self.word_count.setText(f"{len(self.transcript.toPlainText().split())} words"))
         right.addWidget(self.transcript, 1)
@@ -310,6 +322,21 @@ class JoyWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(4, 22, 4, 0)
         layout.setSpacing(13)
+        layout.addWidget(label("VOICE SHORTCUT · WORKS ACROSS WINDOWS", "eyebrow"))
+        layout.addWidget(label("Press once to start recording; press again to stop and transcribe. Works while the bar is hidden. Click below, press your chosen keys, then Apply.", "muted", True))
+        shortcut_row = QHBoxLayout()
+        self.shortcut_edit = QKeySequenceEdit(QKeySequence(self.settings["voice_shortcut"]))
+        self.shortcut_edit.setMaximumSequenceLength(1)
+        self.shortcut_edit.setAccessibleName("Global voice typing shortcut")
+        self.shortcut_edit.setToolTip("Use Ctrl or Alt with a letter, digit or Space, or a function key. F12 stays the keyboard toggle.")
+        shortcut_row.addWidget(self.shortcut_edit, 1)
+        self.shortcut_apply = button("Apply shortcut", self.apply_voice_shortcut)
+        shortcut_row.addWidget(self.shortcut_apply)
+        self.shortcut_reset = button("Reset default", self.reset_voice_shortcut)
+        shortcut_row.addWidget(self.shortcut_reset)
+        layout.addLayout(shortcut_row)
+        self.shortcut_status = label(f"Voice shortcut: {self.settings['voice_shortcut']}", "muted", True)
+        layout.addWidget(self.shortcut_status)
         layout.addWidget(label("LOCAL RECOGNITION", "eyebrow"))
         row = QHBoxLayout()
         self.model = QComboBox()
@@ -375,6 +402,7 @@ class JoyWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(4, 24, 4, 0)
         help_text = label("""<h2>Speak freely. Keep control.</h2>
+<p><b>Custom global shortcut:</b> Preferences → Voice shortcut lets you press your chosen keys, then Apply. Default is Ctrl+Alt+Space. Press once to start recording, again to finish and transcribe, even with the bar hidden. Conflicting shortcuts keep your previous working choice. Reset default restores Ctrl+Alt+Space. Automatic speech-pause finishing can be disabled for manual shortcut control. JoyKeyboard must stay running; protected Windows desktops cannot receive the shortcut.</p>
 <p><b>Start:</b> choose Bengali or English, select your microphone, focus a document and press <b>Ctrl + Alt + Space</b>. Speech pauses of about 1.5 seconds finish and transcribe automatically by default. Recording then stops; start again for the next phrase. Manual Finish or the shortcut also works. Ten seconds without speech discards an empty recording; the maximum is 60 seconds. Disable automatic finishing in Preferences or the bar menu for longer pauses.</p>
 <p><b>Free online:</b> Google web mode needs internet and no user API key. Audio goes to Google. Its shared testing access can be limited or revoked; availability is not guaranteed.</p>
 <p><b>Free offline:</b> multilingual Base/Tiny models are included. Choose Whisper in Voice studio. Larger Small model can be downloaded in Preferences. No API key or per-minute service fee. Accuracy and speed depend on model and PC.</p>
@@ -389,7 +417,7 @@ class JoyWindow(QMainWindow):
 <p><b>Appearance and startup:</b> Preferences controls bar opacity (100% is opaque) and starting at Windows sign-in. The installer offers the same startup option. Startup never enables the microphone automatically.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.1 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.2 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)
@@ -398,7 +426,7 @@ class JoyWindow(QMainWindow):
 
     def _build_tray(self):
         self.tray = QSystemTrayIcon(self.windowIcon(), self)
-        self.tray.setToolTip("JoyKeyboard · Ctrl+Alt+Space")
+        self.tray.setToolTip(f"JoyKeyboard · {self.settings['voice_shortcut']}")
         menu = QMenu()
         for text, callback in (("Show floating bar", self.show_compact), ("Voice studio / tools", self.show_studio), ("Keyboard ON / OFF · F12", self.toggle_keyboard), ("Record / finish", self.toggle_record), ("Quit", self.request_quit)):
             action = QAction(text, menu)
@@ -521,6 +549,47 @@ class JoyWindow(QMainWindow):
             self.autostart.blockSignals(False)
             self.set_status("Startup setting not saved", str(exc), True)
 
+    def voice_shortcut_triggered(self):
+        focused = QApplication.focusWidget()
+        editing = self.isActiveWindow() and (self.shortcut_edit.hasFocus() or (focused and self.shortcut_edit.isAncestorOf(focused)))
+        if self.quitting or editing:
+            return
+        self.toggle_record()
+
+    def apply_voice_shortcut(self):
+        if self.recorder is not None or self.job is not None:
+            self.shortcut_status.setText("Finish current voice work before changing the shortcut.")
+            return
+        previous = self.settings["voice_shortcut"]
+        previous_registered = self.voice_hotkey.shortcut if self.voice_hotkey else None
+        try:
+            shortcut = parse_voice_shortcut(self.shortcut_edit.keySequence().toString(QKeySequence.SequenceFormat.PortableText))[0]
+            if self.voice_hotkey:
+                self.voice_hotkey.register(shortcut)
+            if not self.smoke:
+                save_settings(self.settings_path, {**self.settings, "voice_shortcut": shortcut})
+        except (ValueError, OSError) as exc:
+            if self.voice_hotkey and self.voice_hotkey.shortcut != previous_registered:
+                if previous_registered:
+                    self.voice_hotkey.register(previous_registered)
+                else:
+                    self.voice_hotkey.close()
+                    self.voice_hotkey = VoiceHotkey(int(self.winId()), self.voice_shortcut_triggered)
+            self.shortcut_edit.setKeySequence(QKeySequence(previous))
+            self.shortcut_status.setText(f"Shortcut unchanged. {exc}")
+            return
+        self.settings["voice_shortcut"] = shortcut
+        self.shortcut_edit.setKeySequence(QKeySequence(shortcut))
+        self.shortcut_status.setText(f"Active globally: {shortcut} · press to start / finish")
+        self.tray.setToolTip(f"JoyKeyboard · {shortcut}")
+        self.shortcut_hint.setText(f"{shortcut}  ·  record / finish\nEsc in studio  ·  cancel")
+        self.transcript.setPlaceholderText(f"Focus your document and press {shortcut} to start / finish voice typing.")
+        self.compact.sync_controls()
+
+    def reset_voice_shortcut(self):
+        self.shortcut_edit.setKeySequence(QKeySequence(DEFAULT_VOICE_SHORTCUT))
+        self.apply_voice_shortcut()
+
     def save_rules(self):
         try:
             self.settings["rules"] = parse_rules(self.rules_editor.toPlainText())
@@ -546,6 +615,8 @@ class JoyWindow(QMainWindow):
             self.message.setText(message)
 
     def _controls(self, enabled):
+        for widget in (self.shortcut_edit, self.shortcut_apply, self.shortcut_reset):
+            widget.setEnabled(enabled)
         for widget in (self.language, self.engine, self.devices, self.model, self.prepare_btn, self.system_audio, self.output_encoding, self.auto_pause):
             widget.setEnabled(enabled)
 
@@ -716,10 +787,6 @@ class JoyWindow(QMainWindow):
             destination = f"Destination: {active.title[:70] or 'external app'}"
             if self.target_note.text() != destination:
                 self.target_note.setText(destination)
-        hotkey = key_down(0x11) and key_down(0x12) and key_down(0x20)
-        if hotkey and not self.last_hotkey:
-            self.toggle_record()
-        self.last_hotkey = hotkey
         hold = key_down(0xA3)
         if self.hold.isChecked():
             if hold and not self.last_hold and not key_down(0x12) and self.recorder is None and self.job is None:
@@ -797,6 +864,8 @@ class JoyWindow(QMainWindow):
             self.set_status("Waiting for text assistant", "Let the current request finish, then Quit again.", True)
             return
         self.keyboard_hook.stop()
+        if self.voice_hotkey:
+            self.voice_hotkey.close()
         if not self.smoke and not self.keyboard_closed:
             try:
                 self.keyboard_engine.save()

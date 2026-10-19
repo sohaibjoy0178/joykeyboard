@@ -20,6 +20,7 @@ def window(qt_app, monkeypatch):
     from core import DEFAULT_RULES, DEFAULTS
     monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "rules": dict(DEFAULT_RULES)}, ""))
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
+    monkeypatch.setattr("app.key_down", lambda key: False)
     class FakePauseMonitor:
         reason = None
         error = None
@@ -98,6 +99,70 @@ def test_auto_pause_setting_can_be_disabled_from_bar(window):
     action.trigger()
     assert not window.auto_pause.isChecked() and window.settings["auto_pause"] is False
     window.compact._menu.close()
+
+
+def test_custom_voice_shortcut_updates_hints_and_default_reset(window):
+    from PySide6.QtGui import QKeySequence
+    window.shortcut_edit.setKeySequence(QKeySequence("Ctrl+Alt+V"))
+    window.apply_voice_shortcut()
+    assert window.settings["voice_shortcut"] == "Ctrl+Alt+V"
+    assert "Ctrl+Alt+V" in window.compact.record.toolTip()
+    assert "Ctrl+Alt+V" in window.tray.toolTip()
+    window.reset_voice_shortcut()
+    assert window.settings["voice_shortcut"] == "Ctrl+Alt+Space"
+
+
+def test_shortcut_editor_records_chord_and_apply_button_saves_it(window, qt_app):
+    window.open_workspace(2)
+    window.shortcut_edit.setFocus()
+    qt_app.processEvents()
+    QTest.keyClick(window.shortcut_edit, Qt.Key.Key_V,
+                   Qt.KeyboardModifier.ControlModifier | Qt.KeyboardModifier.AltModifier)
+    QTest.qWait(50)
+    QTest.mouseClick(window.shortcut_apply, Qt.MouseButton.LeftButton)
+    assert window.settings["voice_shortcut"] == "Ctrl+Alt+V"
+    assert window.recorder is None
+
+
+def test_voice_shortcut_conflict_and_save_error_leave_old_choice(window, monkeypatch):
+    from PySide6.QtGui import QKeySequence
+    class Manager:
+        shortcut = "Ctrl+Alt+Space"
+        def register(self, value):
+            if value == "Ctrl+Alt+X":
+                raise OSError("Already in use")
+            self.shortcut = value
+        def close(self):
+            pass
+    manager = Manager()
+    window.voice_hotkey = manager
+    window.shortcut_edit.setKeySequence(QKeySequence("Ctrl+Alt+X"))
+    window.apply_voice_shortcut()
+    assert window.settings["voice_shortcut"] == manager.shortcut == "Ctrl+Alt+Space"
+    assert "Already in use" in window.shortcut_status.text()
+    window.smoke = False
+    def fail(*args):
+        raise OSError("Disk full")
+    monkeypatch.setattr("app.save_settings", fail)
+    window.shortcut_edit.setKeySequence(QKeySequence("Ctrl+Alt+V"))
+    window.apply_voice_shortcut()
+    assert window.settings["voice_shortcut"] == manager.shortcut == "Ctrl+Alt+Space"
+    assert "Disk full" in window.shortcut_status.text()
+    window.smoke = True
+
+
+def test_shortcut_capture_never_starts_recording(window, qt_app, monkeypatch):
+    calls = []
+    monkeypatch.setattr(window, "toggle_record", lambda: calls.append(True))
+    window.open_workspace(2)
+    window.shortcut_edit.setFocus()
+    qt_app.processEvents()
+    window.voice_shortcut_triggered()
+    assert not calls
+    window.hide()
+    window.shortcut_edit.clearFocus()
+    window.voice_shortcut_triggered()
+    assert calls == [True]
 
 
 def test_opacity_menu_updates_preferences_and_live_bar(window, qt_app):

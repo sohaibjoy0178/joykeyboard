@@ -12,11 +12,52 @@ DEFAULT_RULES = {
     "প্রশ্নবোধক চিহ্ন": "?", "দাড়ি চিহ্ন": "।", "কমা চিহ্ন": ",",
     "নতুন লাইন": "\n",
 }
+DEFAULT_VOICE_SHORTCUT = "Ctrl+Alt+Space"
+
+
+def parse_voice_shortcut(value):
+    """Canonical display text and Win32 modifier/key codes for one global chord."""
+    if not isinstance(value, str) or len(value) > 80:
+        raise ValueError("Choose one shortcut, such as Ctrl+Alt+V.")
+    parts = value.strip().split("+")
+    modifiers = {"ctrl": ("Ctrl", 2), "alt": ("Alt", 1), "shift": ("Shift", 4)}
+    mask = 0
+    for part in parts[:-1]:
+        modifier = modifiers.get(part.strip().lower())
+        if modifier is None or mask & modifier[1]:
+            raise ValueError("Use Ctrl, Alt or Shift with one letter, digit, function key or Space.")
+        mask |= modifier[1]
+    key = parts[-1].strip().upper()
+    special = {"SPACE": ("Space", 0x20), "PAUSE": ("Pause", 0x13),
+               "INSERT": ("Insert", 0x2D), "INS": ("Insert", 0x2D),
+               "HOME": ("Home", 0x24), "END": ("End", 0x23),
+               "PGUP": ("PgUp", 0x21), "PGDOWN": ("PgDown", 0x22)}
+    if len(key) == 1 and key in "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789":
+        name, vk = key, ord(key)
+    elif re.fullmatch(r"F(?:[1-9]|1[0-9]|2[0-4])", key):
+        name, vk = key, 0x70 + int(key[1:]) - 1
+    elif key in special:
+        name, vk = special[key]
+    else:
+        raise ValueError("Choose a letter, digit, F1–F11/F13–F24, Space, Pause, Insert, Home, End or Page key.")
+    if key == "F12":
+        raise ValueError("F12 is reserved for the keyboard toggle. Choose another shortcut.")
+    if not mask and not name.startswith("F"):
+        raise ValueError("Add Ctrl, Alt or Shift so ordinary typing does not start recording.")
+    if not mask and 0x70 <= vk <= 0x77:
+        raise ValueError("F1–F8 select word suggestions. Add Ctrl or Alt for a voice shortcut.")
+    if mask == 4 and not name.startswith("F"):
+        raise ValueError("Use Ctrl or Alt; Shift alone would interrupt ordinary typing.")
+    prefix = [title for title, bit in modifiers.values() if mask & bit]
+    return "+".join(prefix + [name]), mask, vk
+
+
 DEFAULTS = {
     "language": "bn-BD", "engine": "google", "model": "base", "device": None,
     "auto_type": True, "bangla_digits": False, "hold_key": False, "auto_pause": True,
     "keyboard_layout": "phonetic", "output_encoding": "unicode", "system_audio": False,
     "bar_position": None, "bar_opacity": 100,
+    "voice_shortcut": DEFAULT_VOICE_SHORTCUT,
     "rules": DEFAULT_RULES,
 }
 
@@ -58,6 +99,11 @@ def load_settings(path: Path) -> tuple[dict, str]:
             values["keyboard_layout"] = saved["keyboard_layout"]
         if saved.get("output_encoding") in ("unicode", "bijoy"):
             values["output_encoding"] = saved["output_encoding"]
+        if "voice_shortcut" in saved:
+            try:
+                values["voice_shortcut"] = parse_voice_shortcut(saved["voice_shortcut"])[0]
+            except ValueError:
+                pass
         position = saved.get("bar_position")
         if type(saved.get("bar_opacity")) is int and saved["bar_opacity"] in (70, 80, 90, 100):
             values["bar_opacity"] = saved["bar_opacity"]
