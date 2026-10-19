@@ -59,3 +59,16 @@ def test_opacity_cannot_make_bar_invisible_and_migrates_old_settings(tmp_path):
     for value, expected in ((70, 70), (100, 100), (0, 100), (True, 100), ("80", 100), (None, 100)):
         path.write_text(json.dumps({"bar_opacity": value}), encoding="utf-8")
         assert load_settings(path)[0]["bar_opacity"] == expected
+
+
+def test_theme_migrates_validates_and_roundtrips(tmp_path):
+    import json
+    path = tmp_path / "settings.json"
+    for saved, expected in (({}, "light"), ({"theme": "dark"}, "dark"),
+                            ({"theme": "light"}, "light"), ({"theme": "auto"}, "light"),
+                            ({"theme": ["dark"]}, "light"), ({"theme": None}, "light")):
+        path.write_text(json.dumps(saved), encoding="utf-8")
+        settings, warning = load_settings(path)
+        assert settings["theme"] == expected and not warning
+        save_settings(path, settings)
+        assert load_settings(path)[0]["theme"] == expected

@@ -46,7 +46,7 @@ from floating_bar import CompactBar
 from hotkeys import VoiceHotkey
 from keyboard_engine import LAYOUTS, KeyboardEngine, to_ansi
 from keyboard_hook import KeyboardHook
-from theme import WORKSPACE_STYLE as STYLE
+from theme import style_sheet
 from tools_ui import KeyboardTools
 from voice import LoopbackRecorder, PauseMonitor, Recognizer, Recorder, list_microphones
 from windows import foreground_target, insert_text, key_down
@@ -121,7 +121,7 @@ class JoyWindow(QMainWindow):
         available = QApplication.primaryScreen().availableGeometry()
         self.resize(min(980, available.width() - 40), min(820, available.height() - 40))
         self.setMinimumSize(720, 500)
-        self.setStyleSheet(STYLE)
+        self.setStyleSheet(style_sheet("workspace", self.settings["theme"]))
         self._build_ui()
         self.compact = CompactBar(self)
         self.tools = KeyboardTools(self, self.keyboard_engine, self.insert_tool_text)
@@ -134,6 +134,7 @@ class JoyWindow(QMainWindow):
         self.keyboard_hook.set_layout(self.settings["keyboard_layout"])
         self.keyboard_hook.set_output_encoding(self.settings["output_encoding"])
         self._build_tray()
+        self.apply_theme()
         self.poll = QTimer(self)
         self.poll.timeout.connect(self.tick)
         if not smoke:
@@ -321,6 +322,16 @@ class JoyWindow(QMainWindow):
         layout.addLayout(row)
         layout.addWidget(label("Base and Tiny are included. Small is an optional download. Local mode needs no internet, API key or GPU. Offline Bangla accuracy was poor in our sample checks; use online recognition for Bangla.", "muted", True))
         layout.addWidget(label("Appearance & startup", "eyebrow"))
+        theme_row = QHBoxLayout()
+        theme_row.addWidget(label("Theme"))
+        self.theme_choice = QComboBox()
+        self.theme_choice.addItem("Light Glass", "light")
+        self.theme_choice.addItem("Dark Glass", "dark")
+        self.theme_choice.setCurrentIndex(self.theme_choice.findData(self.settings["theme"]))
+        self.theme_choice.setAccessibleName("Application theme")
+        self.theme_choice.currentIndexChanged.connect(self.change_theme)
+        theme_row.addWidget(self.theme_choice, 1)
+        layout.addLayout(theme_row)
         appearance = QHBoxLayout()
         appearance.addWidget(label("Floating bar opacity"))
         self.bar_opacity = QComboBox()
@@ -385,10 +396,10 @@ class JoyWindow(QMainWindow):
 <p><b>Compatibility:</b> Windows 10/11, 64-bit Intel/AMD. Microphone required. Automatic typing works in many standard text fields; elevated apps, secure fields and some custom editors may block it. Copy transcript when needed.</p>
 <p><b>Your data:</b> audio is not saved automatically. Local dictionary learning and word transitions are saved on quit; no cloud upload. Gemini text assistance uploads only text you explicitly submit with your own session key. Preferences and user models live in your local JoyKeyboard data folder.</p>
 <p><b>Floating bar:</b> opens on launch. Drag the grip to move it; position is remembered. The language/layout selector and menu reach voice engines, inputs, output encoding and every tool. Closing this workspace returns to the bar; use Quit in its menu to exit.</p>
-<p><b>Appearance and startup:</b> Preferences controls bar opacity (100% is opaque) and starting at Windows sign-in. The installer offers the same startup option. Startup never enables the microphone automatically.</p>
+<p><b>Appearance and startup:</b> Choose Light Glass or Dark Glass in Preferences or the bar menu. Theme changes immediately and is remembered. Bar opacity is independent (100% is opaque). Preferences and the installer offer starting at Windows sign-in. Startup never enables the microphone automatically.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.3 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.4 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)
@@ -499,7 +510,7 @@ class JoyWindow(QMainWindow):
                              auto_pause=self.auto_pause.isChecked(),
                              hold_key=self.hold.isChecked(), system_audio=self.system_audio.isChecked(),
                              output_encoding=self.output_encoding.currentData(),
-                             bar_opacity=self.bar_opacity.currentData())
+                             bar_opacity=self.bar_opacity.currentData(), theme=self.theme_choice.currentData())
         if hasattr(self, "tools"):
             if self.keyboard_hook.output_encoding != self.settings["output_encoding"]:
                 self.keyboard_hook.set_output_encoding(self.settings["output_encoding"])
@@ -509,6 +520,17 @@ class JoyWindow(QMainWindow):
                 save_settings(self.settings_path, self.settings)
         except OSError as exc:
             self.set_status("Preferences not saved", str(exc), True)
+
+    def apply_theme(self):
+        self.setStyleSheet(style_sheet("workspace", self.settings["theme"]))
+        self.tools.setStyleSheet(style_sheet("tools", self.settings["theme"]))
+        self.tray.contextMenu().setStyleSheet(style_sheet("bar", self.settings["theme"]))
+        self.compact.apply_theme()
+
+    def change_theme(self):
+        self.settings["theme"] = self.theme_choice.currentData()
+        self.apply_theme()
+        self.persist()
 
     def change_autostart(self, enabled):
         try:
@@ -579,7 +601,9 @@ class JoyWindow(QMainWindow):
 
     def set_status(self, title, message="", error=False):
         self.state.setText(title)
-        self.state.setStyleSheet("color:#AE2638;" if error else "")
+        self.state.setProperty("error", error)
+        self.state.style().unpolish(self.state)
+        self.state.style().polish(self.state)
         if hasattr(self, "compact"):
             self.compact.set_status(title, message, error)
         if message:

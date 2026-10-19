@@ -30,7 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from keyboard_engine import LAYOUTS
-from theme import BAR_STYLE
+from theme import style_sheet
 
 BAR_WIDTH = 384
 
@@ -96,21 +96,24 @@ class DragGrip(QLabel):
 
 class GlassShell(QFrame):
     """Static highlights; no backdrop capture, blur pass or animation timer."""
+    dark = False
+
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
         rect = QRectF(self.rect()).adjusted(.5, .5, -.5, -.5)
         fill = QLinearGradient(0, 0, 0, self.height())
-        for stop, color in ((0, "#FFFFFF"), (.15, "#FAFCFF"), (.48, "#EDF3FC"),
-                            (.52, "#E5EDF9"), (.9, "#F1F6FE"), (1, "#D9E5F5")):
+        colors = (("#414853", "#343B46", "#252B34", "#181D25", "#222A35", "#11161E") if self.dark
+                  else ("#FFFFFF", "#FAFCFF", "#EDF3FC", "#E5EDF9", "#F1F6FE", "#D9E5F5"))
+        for stop, color in zip((0, .15, .48, .52, .9, 1), colors):
             fill.setColorAt(stop, QColor(color))
         painter.setBrush(fill)
-        painter.setPen(QPen(QColor("#B9C9DF"), 1))
+        painter.setPen(QPen(QColor("#66748A" if self.dark else "#B9C9DF"), 1))
         painter.drawRoundedRect(rect, 17, 17)
         painter.setBrush(Qt.BrushStyle.NoBrush)
         rim = QLinearGradient(0, 0, 0, self.height())
-        rim.setColorAt(0, QColor(255, 255, 255, 255))
-        rim.setColorAt(1, QColor(255, 255, 255, 100))
+        rim.setColorAt(0, QColor(255, 255, 255, 95 if self.dark else 255))
+        rim.setColorAt(1, QColor(255, 255, 255, 15 if self.dark else 100))
         painter.setPen(QPen(rim, 1))
         painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 16, 16)
         painter.end()
@@ -130,7 +133,7 @@ class CompactBar(QWidget):
         self.setWindowIcon(owner.windowIcon())
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
-        self.setStyleSheet(BAR_STYLE)
+        self.setStyleSheet(style_sheet("bar", owner.settings["theme"]))
         self.setFixedWidth(BAR_WIDTH)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(2, 2, 2, 2)
@@ -224,6 +227,20 @@ class CompactBar(QWidget):
         item.clicked.connect(callback)
         return item
 
+    def apply_theme(self):
+        dark = self.owner.settings["theme"] == "dark"
+        self.setStyleSheet(style_sheet("bar", self.owner.settings["theme"]))
+        self.shell.dark = dark
+        self.shell.update()
+        color = "#CFDAEC" if dark else "#4B6080"
+        for widget, name in ((self.more, "more"), (self.hide_btn, "hide"), (self.cancel, "close"),
+                             (self.copy, "copy"), (self.open, "open"), (self.dismiss, "close")):
+            widget.setIcon(line_icon(name, color))
+        self.grip.setPixmap(line_icon("grip", "#ADB9CC" if dark else "#8598B3").pixmap(16, 22))
+        if self._menu is not None:
+            self._menu.setStyleSheet(style_sheet("bar", self.owner.settings["theme"]))
+        self.sync_controls()
+
     def reveal(self):
         if not self._placed:
             area = QGuiApplication.primaryScreen().availableGeometry()
@@ -257,7 +274,7 @@ class CompactBar(QWidget):
                  owner.record_btn.isEnabled(), owner.cancel_btn.isEnabled(),
                  owner.tray.isVisible(), owner.transcript.document().isEmpty(),
                  owner.settings["bar_opacity"])
-        state += (owner.settings["voice_shortcut"],)
+        state += (owner.settings["voice_shortcut"], owner.settings["theme"])
         if state == self._last_state:
             return
         self._last_state = state
@@ -267,12 +284,15 @@ class CompactBar(QWidget):
         self.mode.setToolTip(f"Voice: {owner.language.currentText()}\nKeyboard: {LAYOUTS[owner.settings['keyboard_layout']]}\nClick to change language or layout")
         self.mode.setEnabled(owner.language.isEnabled())
         _flag(self.keyboard_btn, "active", enabled)
-        self.keyboard_btn.setIcon(line_icon("keyboard", "#0962CA" if enabled else "#4B6080"))
+        dark = owner.settings["theme"] == "dark"
+        self.keyboard_btn.setIcon(line_icon("keyboard", ("#A9CDFF" if enabled else "#CFDAEC") if dark else ("#0962CA" if enabled else "#4B6080")))
         self.keyboard_btn.setToolTip(f"Keyboard {'ON' if enabled else 'OFF'} · F12\nType ami, then Space → আমি (phonetic)\nSpace or Enter inserts the composed word")
         self.keyboard_btn.setAccessibleName(self.keyboard_btn.toolTip())
         self.keyboard_btn.setEnabled(not recording and not busy)
         _flag(self.record, "recording", recording)
-        self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic", "#982638" if recording else "#607591" if busy else "#FFFFFF"))
+        self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic",
+                                      ("#FFBCC8" if dark else "#982638") if recording else
+                                      ("#94A5BD" if dark else "#607591") if busy else "#FFFFFF"))
         self.record.setText("Finish" if recording else "Working" if busy else "Speak")
         self.record.setEnabled(owner.record_btn.isEnabled())
         self.record.setAccessibleName(f"{'Finish and transcribe' if recording else 'Start voice typing'} · {owner.settings['voice_shortcut']}")
@@ -351,7 +371,7 @@ class CompactBar(QWidget):
         if self._menu is not None:
             self._menu.deleteLater()
         self._menu = menu
-        menu.setStyleSheet(BAR_STYLE)
+        menu.setStyleSheet(style_sheet("bar", self.owner.settings["theme"]))
         menu.popup(anchor.mapToGlobal(QPoint(0, anchor.height() + 9)))
 
     def input_menu(self):
@@ -362,7 +382,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.3", lambda: None, enabled=False)
+        self._action(menu, "JoyKeyboard  0.4.4", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):
@@ -382,6 +402,7 @@ class CompactBar(QWidget):
                      checked=owner.auto_pause.isChecked(), enabled=owner.auto_pause.isEnabled())
         menu.addSeparator()
         self._action(menu, f"Voice shortcut: {owner.settings['voice_shortcut']}…", lambda: owner.open_workspace(2))
+        self._choices(menu.addMenu("Theme"), owner.theme_choice)
         self._choices(menu.addMenu("Bar opacity"), owner.bar_opacity)
         self._action(menu, "Preferences", lambda: owner.open_workspace(2))
         self._action(menu, "Help and privacy", lambda: owner.open_workspace(3))

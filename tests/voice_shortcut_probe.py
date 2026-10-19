@@ -43,6 +43,7 @@ def probe():
             pass
     app.Recorder = FixtureRecorder
     window = app.JoyWindow()
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData("dark"))
     window.auto_pause.setChecked(False)
     window.auto_type.setChecked(True)
     window.recognizer.transcribe = lambda *args, **kwargs: "আমি বাংলায় লিখি"
@@ -118,7 +119,7 @@ def probe():
         assert not window.isVisible()
         assert foreground_target().pid == info()["pid"]
         wait_for(lambda: window.keyboard_hook.enabled, "Voice did not restore keyboard mode")
-        report = dict(passed=True, shortcut="Ctrl+Alt+Shift+F9", saved=True, hidden_bar_start=True,
+        report = dict(passed=True, theme=window.settings["theme"], shortcut="Ctrl+Alt+Shift+F9", saved=True, hidden_bar_start=True,
                       repeat_did_not_toggle=True, global_start_finish=True, editor_focus_preserved=True,
                       keyboard_resumed=True, actual=info()["actual"], microphone="fixture, no live capture", recognizer="fixture stub")
         (ROOT / "artifacts/voice-shortcut-check.json").write_text(json.dumps(report, indent=2, ensure_ascii=False), encoding="utf-8")

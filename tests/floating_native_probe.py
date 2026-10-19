@@ -21,6 +21,7 @@ def probe():
     application = QApplication([])
     application.setStyle("Fusion")
     view = app.JoyWindow(smoke=True)
+    view.theme_choice.setCurrentIndex(view.theme_choice.findData("dark"))
     view.auto_type.setChecked(True)
     view.system_audio.setChecked(False)
     view.auto_pause.setChecked(False)
@@ -106,7 +107,7 @@ def probe():
         child.wait(timeout=5)
         result = json.loads(output.read_text(encoding="utf-8"))
         assert result["actual"] == "আমি বাংলায় লিখি ", result
-        report = {"passed": True, "show_preserves_focus": True, "native_keyboard_click_preserves_focus": True,
+        report = {"passed": True, "theme": view.settings["theme"], "show_preserves_focus": True, "native_keyboard_click_preserves_focus": True,
                   "native_record_click_preserves_focus": True, "voice_result_inserted_into_owned_editor": True,
                   "studio_stayed_hidden": True, "actual": result["actual"],
                   "speech_backend": "fixture stub, no microphone captured", "physical_mouse_tested": False}

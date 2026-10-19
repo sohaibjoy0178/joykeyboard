@@ -85,6 +85,16 @@ def probe():
     ui = ROOT / "artifacts" / "standalone-ui.png"
     run("standalone-ui", ["--smoke-test", str(ui)])
     assert ui.is_file() and ui.stat().st_size > 5000
+    profile = directory / "user-data/JoyKeyboard/settings.json"
+    profile.parent.mkdir(parents=True, exist_ok=True)
+    profile.write_text('{"theme":"dark"}', encoding="utf-8")
+    dark_ui = ROOT / "artifacts/standalone-dark-ui.png"
+    run("standalone-saved-dark-theme", ["--smoke-test", str(dark_ui)])
+    from PySide6.QtGui import QImage
+    for path, dark in ((ui, False), (dark_ui, True)):
+        frame = QImage(str(path))
+        center = frame.pixelColor(round(frame.width() * .018), frame.height() // 2)
+        assert (max(center.red(), center.green(), center.blue()) < 80) if dark else (min(center.red(), center.green(), center.blue()) > 200)
     english = ROOT / "artifacts" / "standalone-offline-english.json"
     run("offline-bundled-base", ["--check-audio", str(Path(tempfile.gettempdir()) / "joykeyboard-jfk.wav"),
                                 "--check-output", str(english), "--check-model", "base"])

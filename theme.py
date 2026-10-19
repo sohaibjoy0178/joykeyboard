@@ -1,4 +1,4 @@
-"""Static pearl-glass surfaces shared by the bar, studio and writing tools."""
+"""Static light/dark glass surfaces shared by the bar, studio and writing tools."""
 
 WORKSPACE_STYLE = """
 QWidget { color:#172337; font-family:'Segoe UI','Nirmala UI'; font-size:14px; font-style:normal; font-weight:400; }
@@ -94,3 +94,82 @@ QCheckBox::indicator { width:18px; height:18px; border:1px solid #A8B8CE; border
 QCheckBox::indicator:checked { background:#0068D9; border:3px solid #B3D5FF; }
 QCheckBox:focus { outline:1px solid #0068D9; }
 """
+
+DARK_WORKSPACE = """
+QWidget { color:#EDF2FA; }
+QMainWindow, QWidget#workspaceRoot { background:qlineargradient(x1:0,y1:0,x2:1,y2:1,stop:0 #20242C,stop:0.55 #14171D,stop:1 #0D0F13); }
+QLabel#title, QLabel#state { color:#EDF2FA; }
+QLabel#eyebrow, QLabel#muted { color:#ADB9CC; }
+QFrame#panel, QWidget#voiceControls { background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #292F39,stop:1 #191D24); border-color:#414A59; }
+QPushButton { color:#EDF2FA; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 #343C49,stop:1 #232A34); border-color:#4A5668; }
+QPushButton:hover { background:#3B4656; border-color:#739BD1; }
+QPushButton:pressed { background:#1B2533; }
+QPushButton:disabled { color:#8592A5; background:#232832; border-color:#343E4D; }
+QPushButton#primary { color:#FFFFFF; border-color:#75ACF4; }
+QPushButton#primary:disabled { background:#263344; color:#94A5BD; border-color:#40536D; }
+QPushButton#cancel { color:#FFABB8; }
+QPushButton#cancel:disabled { color:#8592A5; }
+QComboBox { color:#EDF2FA; background:#1C2027; border-color:#4A5668; }
+QComboBox:disabled { color:#8592A5; background:#232832; }
+QComboBox QAbstractItemView { background:#222832; color:#EDF2FA; selection-background-color:#263E61; selection-color:#EDF2FA; }
+QCheckBox::indicator { background:#1C2027; border-color:#68798F; }
+QCheckBox::indicator:checked { background:#0068D9; border-color:#7DB7FF; }
+QCheckBox::indicator:disabled { background:#303846; border-color:#46546A; }
+QPlainTextEdit, QLineEdit, QKeySequenceEdit { background:#15191F; color:#EDF2FA; placeholder-text-color:#ADB9CC; border-color:#4A5668; selection-background-color:#263E61; selection-color:#EDF2FA; }
+QKeySequenceEdit QLineEdit { background:transparent; }
+QProgressBar { background:#354256; }
+QTabBar { background:#11151B; }
+QTabBar::tab { color:#ADB9CC; }
+QTabBar::tab:selected { background:#303B4B; color:#EDF2FA; border-color:#556781; }
+QTabBar::tab:hover:!selected { background:#262F3D; }
+QMenu { background:#202630; color:#EDF2FA; border-color:#526079; }
+QMenu::item:selected { background:#263E61; color:#EDF2FA; }
+QMenu::item:disabled { color:#8592A5; }
+QMenu::separator { background:#455166; }
+QToolTip { background:#252D38; color:#EDF2FA; border-color:#63748C; }
+QScrollBar:vertical { background:#1B2028; }
+QScrollBar::handle:vertical { background:#57667D; }
+QLabel#state[error="true"] { color:#FFABB8; }
+"""
+
+DARK_BAR = """
+QWidget { color:#EDF2FA; }
+QToolButton:hover { background:#3B4656; border-color:#647790; }
+QToolButton:pressed { background:#1A2432; }
+QToolButton:disabled { color:#8592A5; }
+QToolButton#mode { color:#D5DEED; }
+QToolButton#keyboard[active="true"] { background:#263E61; border-color:#608BC2; }
+QToolButton#speak[recording="true"] { background:#4B2531; border-color:#A36176; color:#FFBCC8; }
+QToolButton#speak:disabled { background:#263344; border-color:#40536D; color:#94A5BD; }
+QToolButton#candidate { background:#222C3B; color:#EDF2FA; border-color:#53657D; }
+QToolButton#candidate:hover { background:#2D4566; border-color:#80B1F0; }
+QLabel#composition { color:#A9CDFF; }
+QLabel#status { color:#B6C4D9; }
+QLabel#status[error="true"] { color:#FFABB8; }
+QProgressBar { background:#354256; }
+QMenu { background:#202630; color:#EDF2FA; border-color:#526079; }
+QMenu::item:selected { background:#263E61; color:#EDF2FA; }
+QMenu::item:disabled { color:#8592A5; }
+QMenu::separator { background:#455166; }
+QToolTip { background:#252D38; color:#EDF2FA; border-color:#63748C; }
+"""
+
+DARK_TOOLS = """
+QLineEdit, QListWidget { background:#15191F; color:#EDF2FA; border-color:#4A5668; selection-background-color:#263E61; selection-color:#EDF2FA; }
+QListWidget::item:selected { background:#263E61; color:#EDF2FA; }
+QCheckBox { color:#EDF2FA; }
+QCheckBox::indicator { background:#1C2027; border-color:#68798F; }
+QCheckBox::indicator:checked { background:#0068D9; border-color:#7DB7FF; }
+"""
+
+# Keep error styling in the stylesheet so it also follows a live theme switch.
+WORKSPACE_STYLE += '\nQLabel#state[error="true"] { color:#AE2638; }\n'
+
+
+def style_sheet(surface, theme):
+    light, dark = {
+        "workspace": (WORKSPACE_STYLE, DARK_WORKSPACE),
+        "bar": (BAR_STYLE, DARK_BAR),
+        "tools": (TOOLS_STYLE, DARK_TOOLS),
+    }[surface]
+    return light + dark if theme == "dark" else light

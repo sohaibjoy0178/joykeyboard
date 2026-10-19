@@ -1,4 +1,26 @@
-# JoyKeyboard 0.4.3 verification
+# JoyKeyboard 0.4.4 verification
+
+Delivered `dist/0.4.4/JoyKeyboard-Setup.exe`, **319,098,846 bytes**. SHA-256: `c692af7e464f8cefb319925358d2ee525018b77bf3881edfe37c0b788ba4c434`. Installer and checksum are release assets at [v0.4.4](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.4); source and actual UI preview images are in Git. Private-repository access is required.
+
+## Light and Dark Glass
+
+Select **bar menu → Theme → Dark Glass**, or **Preferences → Appearance & startup → Theme**. Black/charcoal reflected surfaces and ivory text cover studio, all six tools, inputs, suggestions, error states, popup menus and tray menu. Light Glass remains available and is the default for old/missing/invalid settings. Theme switches immediately, is saved atomically with preferences and is restored at launch. Transcript, voice shortcut and independently chosen opacity are preserved. Static Qt painting adds no blur/capture loop, animation timer or dependency. Idle bar stays 384×48 logical pixels, opaque at 100% with clear rounded corners.
+
+## Executed checks
+
+- **189 pytest cases passed**, `artifacts/tests-0.4.4.log`. New checks execute theme migration/validation/roundtrip, all-surface switching via bar menu, real preference saves, saved-dark launch, retained transcript/shortcut/opacity, live error-color changes and dark shell pixels/clear corners. Light/dark primary, muted, selected, recording and error text contrast checks passed (4.5:1 minimum for the tested pairs). Existing voice, keyboard, document, geometry and global shortcut tests passed. Two upstream Python 3.12 deprecation warnings remain.
+- Actual light/dark UI captures inspected for bar, Bangla candidates, studio, Settings, converter, Help and main menu. All six tool pages captured. `tests/render_glass_probe.py` uses disposable profile/sample text and no microphone/network. Selected captures committed under `docs/screenshots/`.
+- Native Windows editor checks under Dark Glass passed: showing bar, keyboard click and voice click preserved destination focus; fixture Bengali voice result inserted correctly (`artifacts/floating-native-result.json`). Full custom global shortcut start/finish with hidden bar, repeat suppression, focus preservation and keyboard resume passed (`artifacts/voice-shortcut-check.json`). These use fixture microphone/recognizer stubs with actual Windows registration and input.
+- Actual packaged app launched with saved Dark Glass and custom Ctrl+Alt+Shift+F9. Hidden-bar shortcut dispatch, multiword/fast Bangla input, Backspace and native password pass-through passed (`artifacts/packaged-keyboard-event-check.json`). Intentionally absent Small model prevented real microphone capture in that shortcut-dispatch probe.
+- Clean PyInstaller and Inno Setup builds passed. All twelve embedded modules plus main matched final sources; required assets/models found (`artifacts/package-code-check.json`).
+- Fresh-folder packaged app passed default Light Glass and saved Dark Glass UI checks, including actual screenshot pixel assertions, with System32-only PATH and no Python environment. Bundled Base offline English, Google online Bengali, automatic speech-pause Bengali, normal hook startup and graceful close passed (`artifacts/standalone-check.json`). No model downloads.
+- Actual single-EXE install/reinstall/uninstall passed: checked-by-default autostart, quoted Run command, developer/Facebook publisher values, startup removal when unchecked, normal startup/shutdown and preserved user data. Original registry/shortcut state restored (`artifacts/installer-check.json`).
+- Installed **Dark Glass** idle ten-second sample: **126.53 MiB working set**, **71.21 MiB private committed memory**, **0.625% of one CPU core**. Measurement on this Ryzen 9 Windows 11 development PC, not a universal ceiling or low-end certification. Recording/transcription uses more resources.
+- Ruff and pip dependency checks passed. No new runtime dependencies. User's existing app was not force-terminated.
+
+Installer remains unsigned. No second PC/VM, full third-party application matrix, physical keyboard or live microphone quality check this release. Native OS dialogs/title bars follow Windows behavior; app themes do not change Windows itself. Existing offline-Bengali accuracy and online-service availability limitations remain.
+
+# Historical 0.4.3 verification
 
 Delivered `dist/0.4.3/JoyKeyboard-Setup.exe`, **318,743,432 bytes**. SHA-256: `89324f45b507a9b077e6e8e7834d4511ba1e2b43d5bb4ac022aff8c078a33fec`. Installer and checksum are release assets at [v0.4.3](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.3); source and preview images are in Git. Private-repository access is required.
 

@@ -25,6 +25,8 @@ class Memory(ctypes.Structure):
 application = QApplication([])
 application.setQuitOnLastWindowClosed(False)
 window = JoyWindow(smoke=True)
+if len(sys.argv) > 2:
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData(sys.argv[2]))
 window.show_compact()
 window.poll.start(40)
 started = []
@@ -45,7 +47,7 @@ def finish():
                   one_core_percent=round(cpu / elapsed * 100, 3),
                   working_set_mib=round(memory.ws / 2**20, 2), private_mib=round(memory.private / 2**20, 2),
                   peak_working_set_mib=round(memory.peak_ws / 2**20, 2),
-                  bar_size=[window.compact.width(), window.compact.height()])
+                  bar_size=[window.compact.width(), window.compact.height()], theme=window.settings["theme"])
     Path(sys.argv[1]).write_text(json.dumps(result, indent=2), encoding="utf-8")
     window.close()
     application.quit()

@@ -193,6 +193,61 @@ def test_glass_shell_is_opaque_readable_and_keeps_clear_corners(window, qt_app):
     assert frame.pixelColor(0, 0).alpha() < 30
 
 
+def test_dark_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_app, monkeypatch, tmp_path):
+    from core import load_settings
+    from theme import style_sheet
+    window.show_compact()
+    window.transcript.setPlainText("আমি বাংলায় লিখি। Draft stays here.")
+    window.bar_opacity.setCurrentIndex(window.bar_opacity.findData(80))
+    window.set_status("Example error", error=True)
+    window.compact.dismiss_feedback()
+    window.settings_path = tmp_path / "settings.json"
+    window.smoke = False
+    # Actual saves, but no hook, microphone, hotkey or autostart registration.
+    window.compact.main_menu()
+    menu = next(a.menu() for a in window.compact._menu.actions() if a.text() == "Theme")
+    menu.actions()[1].trigger()
+    window.compact._menu.close()
+    qt_app.processEvents()
+    assert window.theme_choice.currentData() == "dark"
+    assert load_settings(window.settings_path)[0]["theme"] == "dark"
+    assert window.styleSheet() == style_sheet("workspace", "dark")
+    assert window.tools.styleSheet() == style_sheet("tools", "dark")
+    assert window.compact.styleSheet() == style_sheet("bar", "dark")
+    assert window.tray.contextMenu().styleSheet() == style_sheet("bar", "dark")
+    assert window.state.property("error") is True
+    assert window.state.palette().windowText().color().name() == "#ffabb8"
+    assert window.transcript.toPlainText() == "আমি বাংলায় লিখি। Draft stays here."
+    assert abs(window.compact.windowOpacity() - .8) < .01
+    assert window.settings["voice_shortcut"] == "Ctrl+Alt+Space"
+    window.compact.dismiss_feedback()
+    assert window.compact.size().width() == 384 and window.compact.height() == 48
+    shell = window.compact.shell
+    frame = shell.grab().toImage()
+    scale = frame.devicePixelRatio()
+    center = frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale))
+    assert center.alpha() == 255 and max(center.red(), center.green(), center.blue()) < 80
+    assert frame.pixelColor(0, 0).alpha() < 30
+    assert shell.graphicsEffect() is None
+    window.theme_choice.setCurrentIndex(0)
+    assert not shell.dark and load_settings(window.settings_path)[0]["theme"] == "light"
+    assert window.state.palette().windowText().color().name() == "#ae2638"
+    window.smoke = True
+
+
+def test_saved_dark_theme_applies_at_launch(qt_app, monkeypatch):
+    from core import DEFAULT_RULES, DEFAULTS
+    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "dark", "rules": dict(DEFAULT_RULES)}, ""))
+    monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
+    view = JoyWindow(smoke=True)
+    try:
+        assert view.theme_choice.currentData() == "dark"
+        assert view.compact.shell.dark
+        assert "#15191F" in view.tools.styleSheet()
+    finally:
+        view.close()
+
+
 def test_idle_sync_does_not_relayout_and_record_controls_fit(window, qt_app, monkeypatch):
     bar = window.compact
     window.show_compact()

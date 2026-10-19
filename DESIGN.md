@@ -29,10 +29,10 @@ spacing:
 # JoyKeyboard
 
 ## Overview
-Apple-inspired pearl glass translated to a lightweight Windows utility: pale silver layers, a fine white rim, subtle reflected highlights, clear navy typography and restrained blue controls. Original J/microphone mark uses matching silver/blue glass artwork. Compact bar remains the default; studio and tools open on request. No borrowed Apple branding or macOS dependencies.
+Apple-inspired glass translated to a lightweight Windows utility. Light Glass uses pale silver layers and navy type. Dark Glass uses black/charcoal layers (#111318 background, #1C2027 surfaces), ivory text (#EDF2FA), muted silver (#ADB9CC), blue controls and a subtle reflected rim. Preferences and the bar menu switch both themes instantly and remember the choice. Existing installations default to Light Glass. Original J/microphone mark uses silver/blue glass artwork. Compact bar remains the default; studio and tools open on request. No borrowed Apple branding or macOS dependencies.
 
 ## Colors
-Blue identifies primary actions and selected controls. Neutral silver keeps surfaces quiet. A warm rose recording state and readable red errors carry text as well as color. Use the same light palette in every tool, popup, input, selection and help view.
+Blue identifies primary actions and selected controls. Neutral silver or charcoal keeps surfaces quiet. A rose recording state and readable red errors carry text as well as color. Apply the chosen palette to every tool, popup, input, selection and help view. Dark errors use #FFABB8 against charcoal; selections use #263E61 with ivory text. Opacity remains independent of theme. Dark glass uses the same static painting, without extra timers or background capture.
 
 ## Typography
 Native Windows typography ensures readable rendering without remote font dependencies. Bengali uses system Bengali fallback.

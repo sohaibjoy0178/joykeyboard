@@ -56,7 +56,7 @@ DEFAULTS = {
     "language": "bn-BD", "engine": "google", "model": "base", "device": None,
     "auto_type": True, "bangla_digits": False, "hold_key": False, "auto_pause": True,
     "keyboard_layout": "phonetic", "output_encoding": "unicode", "system_audio": False,
-    "bar_position": None, "bar_opacity": 100,
+    "bar_position": None, "bar_opacity": 100, "theme": "light",
     "voice_shortcut": DEFAULT_VOICE_SHORTCUT,
     "rules": DEFAULT_RULES,
 }
@@ -92,6 +92,7 @@ def load_settings(path: Path) -> tuple[dict, str]:
             raise ValueError("Settings must be a JSON object.")
         for key, allowed in {"language": ("bn-BD", "en-US"),
                              "engine": ("google", "offline"),
+                             "theme": ("light", "dark"),
                              "model": ("tiny", "base", "small")}.items():
             if saved.get(key) in allowed:
                 values[key] = saved[key]
