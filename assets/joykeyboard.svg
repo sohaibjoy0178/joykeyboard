@@ -1,14 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
   <defs>
     <linearGradient id="case" x1="64" y1="24" x2="441" y2="498" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#293A2E"/><stop offset="1" stop-color="#101614"/>
+      <stop stop-color="#FFFFFF"/><stop offset="0.48" stop-color="#EDF4FF"/><stop offset="1" stop-color="#B9D1F1"/>
     </linearGradient>
     <linearGradient id="voice" x1="207" y1="108" x2="345" y2="395" gradientUnits="userSpaceOnUse">
-      <stop stop-color="#E6F5B5"/><stop offset="1" stop-color="#B5D470"/>
+      <stop stop-color="#4698F5"/><stop offset="1" stop-color="#005AC8"/>
     </linearGradient>
   </defs>
   <rect x="12" y="12" width="488" height="488" rx="113" fill="url(#case)"/>
-  <rect x="13.5" y="13.5" width="485" height="485" rx="111.5" fill="none" stroke="#405142" stroke-width="3"/>
+  <rect x="13.5" y="13.5" width="485" height="485" rx="111.5" fill="none" stroke="#91B2DE" stroke-width="3"/>
+  <rect x="19" y="19" width="474" height="474" rx="106" fill="none" stroke="#FFFFFF" stroke-opacity="0.85" stroke-width="4"/>
   <g fill="url(#voice)">
     <rect x="263" y="104" width="72" height="153" rx="36"/>
     <rect x="150" y="182" width="16" height="58" rx="8"/>
@@ -16,5 +17,5 @@
   </g>
   <path d="M231 211v25a68 68 0 0 0 136 0v-25" fill="none" stroke="url(#voice)" stroke-width="19" stroke-linecap="round"/>
   <path d="M299 305v34c0 37-20 58-54 58-32 0-53-21-53-51" fill="none" stroke="url(#voice)" stroke-width="29" stroke-linecap="round"/>
-  <path d="M288 140h22m-22 23h22" fill="none" stroke="#31442B" stroke-width="7" stroke-linecap="round"/>
+  <path d="M288 140h22m-22 23h22" fill="none" stroke="#D9EAFF" stroke-width="7" stroke-linecap="round"/>
 </svg>

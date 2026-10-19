@@ -30,6 +30,7 @@ from PySide6.QtWidgets import (
 )
 
 from keyboard_engine import LAYOUTS, from_ansi, to_ansi
+from theme import TOOLS_STYLE
 
 MAX_FILE_BYTES = 10 * 1024 * 1024
 
@@ -167,16 +168,7 @@ class KeyboardTools(QWidget):
         self._build_assistant()
         self.status = _note("Local keyboard tools ready. Voice controls stay in Voice studio.")
         root.addWidget(self.status)
-        self.setStyleSheet("""
-            QLineEdit, QListWidget { background:#19221E; border:1px solid #344238;
-                border-radius:8px; padding:8px; selection-background-color:#43513B; }
-            QLineEdit:focus, QListWidget:focus { border:1px solid #D8ED92; }
-            QListWidget::item:selected { background:#43513B; color:#F4F5ED; }
-            QCheckBox { color:#F4F5ED; spacing:8px; }
-            QCheckBox::indicator { width:18px; height:18px; border:1px solid #A4B2A8; background:#19221E; }
-            QCheckBox::indicator:checked { background:#D8ED92; border:3px solid #43513B; }
-            QCheckBox:focus { outline:1px solid #D8ED92; }
-        """)
+        self.setStyleSheet(TOOLS_STYLE)
 
     def _panel(self, name):
         panel = QWidget()

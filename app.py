@@ -46,45 +46,13 @@ from floating_bar import CompactBar
 from hotkeys import VoiceHotkey
 from keyboard_engine import LAYOUTS, KeyboardEngine, to_ansi
 from keyboard_hook import KeyboardHook
+from theme import WORKSPACE_STYLE as STYLE
 from tools_ui import KeyboardTools
 from voice import LoopbackRecorder, PauseMonitor, Recognizer, Recorder, list_microphones
 from windows import foreground_target, insert_text, key_down
 
 ASSETS = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "assets"
-STYLE = """
-QWidget { background:#101614; color:#F4F5ED; font-family:'Segoe UI'; font-size:14px; font-style:normal; font-weight:400; }
-QLabel { background:transparent; }
-QLabel#eyebrow { color:#D8ED92; font-size:11px; font-weight:700; letter-spacing:2px; }
-QLabel#title { font-size:34px; font-weight:600; }
-QLabel#muted { color:#A4B2A8; }
-QLabel#state { font-size:23px; font-weight:600; }
-QFrame#panel { background:#19221E; border:1px solid #344238; border-radius:18px; }
-QFrame#panel QLabel, QFrame#panel QCheckBox { background:transparent; }
-QPushButton { background:#232E27; border:1px solid #344238; border-radius:9px; padding:10px 17px; font-weight:600; }
-QPushButton:hover { background:#344238; border-color:#708166; }
-QPushButton:focus { border:2px solid #D8ED92; }
-QPushButton:disabled { color:#748277; background:#19221E; }
-QPushButton#primary { background:#D8ED92; color:#182016; border:0; padding:17px; font-size:16px; }
-QPushButton#primary:hover { background:#E9F6BD; }
-QPushButton#primary:disabled { background:#344238; color:#A4B2A8; }
-QPushButton#cancel { color:#FFB0A5; }
-QComboBox { background:#232E27; border:1px solid #344238; border-radius:8px; padding:9px 12px; min-height:23px; }
-QComboBox::drop-down { border:0; width:25px; }
-QComboBox QAbstractItemView { background:#232E27; selection-background-color:#43513B; padding:8px; }
-QCheckBox { spacing:9px; padding:5px 0; }
-QCheckBox::indicator { width:17px; height:17px; border:1px solid #708166; border-radius:4px; background:#101614; }
-QCheckBox::indicator:checked { background:#D8ED92; border:3px solid #708166; }
-QPlainTextEdit { background:#19221E; border:1px solid #344238; border-radius:12px; padding:16px; font-size:17px; selection-background-color:#43513B; }
-QProgressBar { border:0; border-radius:3px; background:#344238; max-height:6px; min-height:6px; }
-QProgressBar::chunk { background:#D8ED92; border-radius:3px; }
-QTabWidget::pane { border:0; }
-QTabBar::tab { background:#101614; color:#A4B2A8; padding:13px 22px; border-bottom:2px solid #344238; }
-QTabBar::tab:selected { color:#D8ED92; border-bottom:2px solid #D8ED92; }
-QMenu { background:#19221E; border:1px solid #344238; padding:6px; }
-QMenu::item { padding:9px 22px; }
-QMenu::item:selected { background:#344238; }
-QToolTip { background:#232E27; color:#F4F5ED; border:1px solid #708166; padding:8px; }
-"""
+
 
 
 def label(text, role=None, wrap=False):
@@ -191,6 +159,7 @@ class JoyWindow(QMainWindow):
 
     def _build_ui(self):
         root = QWidget()
+        root.setObjectName("workspaceRoot")
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         scroll.setFrameShape(QFrame.Shape.NoFrame)
@@ -206,7 +175,7 @@ class JoyWindow(QMainWindow):
         header.addWidget(brand)
         names = QVBoxLayout()
         names.setSpacing(0)
-        names.addWidget(label("YOUR KEYBOARD WORKSPACE", "eyebrow"))
+        names.addWidget(label("Keyboard & voice", "eyebrow"))
         names.addWidget(label("JoyKeyboard", "title"))
         header.addLayout(names)
         header.addStretch()
@@ -223,7 +192,7 @@ class JoyWindow(QMainWindow):
         controls = QVBoxLayout()
         controls.setSpacing(8)
         controls.setContentsMargins(0, 0, 0, 0)
-        controls.addWidget(label("YOUR VOICE", "eyebrow"))
+        controls.addWidget(label("Voice", "eyebrow"))
         self.language = QComboBox()
         self.language.addItem("বাংলা  ·  Bengali", "bn-BD")
         self.language.addItem("English  ·  United States", "en-US")
@@ -238,7 +207,7 @@ class JoyWindow(QMainWindow):
         controls.addWidget(self.engine)
         self.engine_note = label("", "muted", True)
         controls.addWidget(self.engine_note)
-        controls.addWidget(label("MICROPHONE", "eyebrow"))
+        controls.addWidget(label("Audio input", "eyebrow"))
         self.devices = QComboBox()
         self.devices.setAccessibleName("Microphone device")
         devices_row = QHBoxLayout()
@@ -279,11 +248,13 @@ class JoyWindow(QMainWindow):
         controls.addStretch()
         left = QWidget()
         left.setLayout(controls)
-        left.setFixedWidth(315)
+        left.setObjectName("voiceControls")
+        controls.setContentsMargins(16, 18, 16, 18)
+        left.setFixedWidth(335)
         columns.addWidget(left)
         right = QVBoxLayout()
         caption = QHBoxLayout()
-        caption.addWidget(label("TRANSCRIPT", "eyebrow"))
+        caption.addWidget(label("Transcript", "eyebrow"))
         caption.addStretch()
         self.word_count = label("0 words", "muted")
         caption.addWidget(self.word_count)
@@ -322,7 +293,7 @@ class JoyWindow(QMainWindow):
         layout = QVBoxLayout(page)
         layout.setContentsMargins(4, 22, 4, 0)
         layout.setSpacing(13)
-        layout.addWidget(label("VOICE SHORTCUT · WORKS ACROSS WINDOWS", "eyebrow"))
+        layout.addWidget(label("Voice shortcut  ·  works across Windows", "eyebrow"))
         layout.addWidget(label("Press once to start recording; press again to stop and transcribe. Works while the bar is hidden. Click below, press your chosen keys, then Apply.", "muted", True))
         shortcut_row = QHBoxLayout()
         self.shortcut_edit = QKeySequenceEdit(QKeySequence(self.settings["voice_shortcut"]))
@@ -337,7 +308,7 @@ class JoyWindow(QMainWindow):
         layout.addLayout(shortcut_row)
         self.shortcut_status = label(f"Voice shortcut: {self.settings['voice_shortcut']}", "muted", True)
         layout.addWidget(self.shortcut_status)
-        layout.addWidget(label("LOCAL RECOGNITION", "eyebrow"))
+        layout.addWidget(label("Local recognition", "eyebrow"))
         row = QHBoxLayout()
         self.model = QComboBox()
         for name, key in (("Tiny · fastest / lowest accuracy", "tiny"), ("Base · balanced", "base"), ("Small · larger / slower", "small")):
@@ -349,7 +320,7 @@ class JoyWindow(QMainWindow):
         row.addWidget(self.prepare_btn)
         layout.addLayout(row)
         layout.addWidget(label("Base and Tiny are included. Small is an optional download. Local mode needs no internet, API key or GPU. Offline Bangla accuracy was poor in our sample checks; use online recognition for Bangla.", "muted", True))
-        layout.addWidget(label("APPEARANCE & STARTUP", "eyebrow"))
+        layout.addWidget(label("Appearance & startup", "eyebrow"))
         appearance = QHBoxLayout()
         appearance.addWidget(label("Floating bar opacity"))
         self.bar_opacity = QComboBox()
@@ -389,7 +360,7 @@ class JoyWindow(QMainWindow):
         self.digits = QCheckBox("Use বাংলা digits in Bengali transcripts")
         self.digits.setChecked(self.settings["bangla_digits"])
         layout.addWidget(self.digits)
-        layout.addWidget(label("SPEECH REPLACEMENTS", "eyebrow"))
+        layout.addWidget(label("Speech replacements", "eyebrow"))
         layout.addWidget(label(r"One rule per line: spoken phrase => replacement. Use \n for a new line.", "muted", True))
         self.rules_editor = QPlainTextEdit(format_rules(self.settings["rules"]))
         self.rules_editor.setAccessibleName("Speech replacement rules")
@@ -417,7 +388,7 @@ class JoyWindow(QMainWindow):
 <p><b>Appearance and startup:</b> Preferences controls bar opacity (100% is opaque) and starting at Windows sign-in. The installer offers the same startup option. Startup never enables the microphone automatically.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.2 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.3 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)
@@ -608,7 +579,7 @@ class JoyWindow(QMainWindow):
 
     def set_status(self, title, message="", error=False):
         self.state.setText(title)
-        self.state.setStyleSheet("color:#FFB0A5;" if error else "")
+        self.state.setStyleSheet("color:#AE2638;" if error else "")
         if hasattr(self, "compact"):
             self.compact.set_status(title, message, error)
         if message:

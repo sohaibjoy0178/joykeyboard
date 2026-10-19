@@ -1,12 +1,16 @@
-# JoyKeyboard 0.4.2
+# JoyKeyboard 0.4.3
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
 Windows Bengali/English keyboard and voice studio. Independently built; no NMS Kontho proprietary code, dictionaries, branding, credentials or license checks reused. Original J/microphone icon included.
 
+![Pearl Glass floating bar](docs/screenshots/glass-bar.png)
+
+![Voice studio, shown with sample text](docs/screenshots/glass-studio.png)
+
 ## Install with one EXE
 
-Open **dist/0.4.2/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, libraries, dictionaries and multilingual Whisper Base/Tiny weights are included. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 1 GB free installation space. Settings and learned words stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
+Open **dist/0.4.3/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, libraries, dictionaries and multilingual Whisper Base/Tiny weights are included. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 1 GB free installation space. Settings and learned words stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
 
 Installer's **Select Additional Tasks** page offers **Start JoyKeyboard when I sign in to Windows**, checked by default, plus an optional desktop shortcut. Change startup any time under **Preferences → Appearance & startup**. Both use the same HKCU Run entry. Startup displays the idle floating bar; it never starts recording automatically. Windows Startup Apps policies can override startup. App uses one instance per user.
 
@@ -18,7 +22,11 @@ The app opens as a **384 × 48 logical-pixel floating bar**, always on top. Drag
 
 The **three-dot menu** reaches every tool, speech engine, microphone/computer audio choice, Unicode/Bijoy output, automatic typing, Preferences and privacy help. Click the **Joy icon** for the full workspace. Closing the workspace returns to the bar and keeps drafts; **Quit JoyKeyboard** in the bar/tray menu exits with unsaved-draft checks. The minus button hides the idle bar to the notification area; click the tray icon to restore it. Errors/transcript feedback appear in an expandable strip with Copy/Open controls.
 
-The bar uses a solid surface, original icon, vector controls and native fonts, without blur or animated decoration. **Bar opacity** in its menu or Preferences offers 70/80/90/100%; **100% is fully opaque** and is the default. Rounded corners remain clear. Showing it and clicking keyboard/voice buttons were tested against a separate owned editor without stealing input focus.
+**Pearl Glass interface:** Apple-inspired silver surfaces, reflected highlights, fine white edges, rounded blue controls and matching original icon. Studio, Settings, writing tools and menus use the same light palette. Explicit Nirmala UI fallback keeps Bengali text readable. The compact bar remains 384×48. **Bar opacity** in its menu or Preferences offers 70/80/90/100%; **100% is fully opaque** and is the default. Rounded corners remain clear. This lightweight glass finish uses static Qt painting, without native Apple Liquid Glass, continuous desktop blur, refraction shaders or an animation timer. Showing the bar and clicking keyboard/voice buttons preserves destination focus in the native editor checks.
+
+## Download from GitHub
+
+[Latest installer and source release](https://github.com/sohaibjoy0178/joykeyboard/releases/latest). Download **JoyKeyboard-Setup.exe** and install; no ZIP extraction needed. `SHA256SUMS.txt` accompanies the installer. Repository is private, so sign in with an authorized GitHub account. EXE is attached to GitHub Releases; source/build scripts remain in Git history. Large offline model weights are included in the installer and excluded from Git source history.
 
 ## Resource use
 
@@ -87,7 +95,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipInstall
 powershell -ExecutionPolicy Bypass -File .\build-installer.ps1 -SkipInstall
 ```
 
-`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.2/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. `assets/models/` must contain supplied Base/Tiny files; obtain unmodified files from repositories in `assets/models/SOURCES.txt` when rebuilding without weights. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
+`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.3/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. `assets/models/` must contain supplied Base/Tiny files; obtain unmodified files from repositories in `assets/models/SOURCES.txt` when rebuilding without weights. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
 
 ## Licenses and replacement
 

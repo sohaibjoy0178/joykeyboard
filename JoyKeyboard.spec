@@ -13,7 +13,8 @@ os.environ["PATH"] = os.pathsep.join(str(path) for path in (
     Path(sys.executable).parent, Path(sys.base_prefix), Path(sys.base_prefix) / "DLLs",
     windows / "System32", windows,
 ))
-datas = [(str(project / "assets" / "joykeyboard.png"), "assets"),
+datas = [(str(project / "docs" / "screenshots"), "docs/screenshots"),
+         (str(project / "assets" / "joykeyboard.png"), "assets"),
          (str(project / "assets" / "joykeyboard.ico"), "assets"),
          (str(project / "assets" / "joykeyboard.svg"), "assets"),
          (str(project / "assets" / "keyboard"), "assets/keyboard"),

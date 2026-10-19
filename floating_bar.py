@@ -3,8 +3,18 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from PySide6.QtCore import QByteArray, QPoint, QSize, Qt, QTimer
-from PySide6.QtGui import QAction, QActionGroup, QGuiApplication, QIcon, QPainter, QPixmap
+from PySide6.QtCore import QByteArray, QPoint, QRectF, QSize, Qt, QTimer
+from PySide6.QtGui import (
+    QAction,
+    QActionGroup,
+    QColor,
+    QGuiApplication,
+    QIcon,
+    QLinearGradient,
+    QPainter,
+    QPen,
+    QPixmap,
+)
 from PySide6.QtSvg import QSvgRenderer
 from PySide6.QtWidgets import (
     QFrame,
@@ -20,39 +30,10 @@ from PySide6.QtWidgets import (
 )
 
 from keyboard_engine import LAYOUTS
+from theme import BAR_STYLE
 
 BAR_WIDTH = 384
-BAR_STYLE = """
-QWidget { color:#F4F5ED; font-family:'Segoe UI Variable Text','Segoe UI'; font-size:12px; font-style:normal; font-weight:400; }
-QWidget#floatingRoot { background:transparent; }
-QFrame#shell { background:#19221E; border:1px solid #455248; border-radius:12px; }
-QLabel { background:transparent; border:0; }
-QToolButton { border:1px solid transparent; border-radius:8px; padding:4px; }
-QToolButton:hover { background:#39483C; border:1px solid #53634E; }
-QToolButton:pressed { background:#46563F; }
-QToolButton:disabled { color:#7D8B80; }
-QToolButton#brand { font-size:15px; font-weight:600; padding:0; }
-QToolButton#mode { color:#E6EBDE; font-size:12px; }
-QToolButton#keyboard[active="true"] { background:#405331; border:1px solid #748756; }
-QToolButton#speak { color:#192313; background:#D8ED92; border:1px solid #E4F2B5; font-weight:600; }
-QToolButton#speak:hover { background:#E6F5AF; }
-QToolButton#speak:pressed { background:#BDDA77; }
-QToolButton#speak[recording="true"] { background:#F4B6A6; border-color:#FFD2C3; color:#341D17; }
-QToolButton#speak:disabled { background:#35432E; border-color:#4B5D3F; color:#B7C6A6; }
-QToolButton#candidate { background:#2E3D30; border:1px solid #475D43; border-radius:6px; padding:2px 5px; text-align:left; }
-QToolButton#candidate:hover { background:#465E38; border-color:#9DB678; }
-QLabel#composition { color:#D8ED92; font-size:13px; }
-QLabel#status { color:#C3CEC0; font-size:11px; }
-QLabel#status[error="true"] { color:#FFC4B6; }
-QProgressBar { background:#465445; border:0; border-radius:2px; max-height:3px; min-height:3px; }
-QProgressBar::chunk { background:#D8ED92; border-radius:2px; }
-QMenu { background:#1C2720; color:#F4F5ED; border:1px solid #4A5B4C; padding:7px; border-radius:9px; font-family:'Segoe UI'; font-size:13px; }
-QMenu::item { padding:8px 28px 8px 19px; border-radius:5px; }
-QMenu::item:selected { background:#3A4E31; color:#E5F4B7; }
-QMenu::item:disabled { color:#8D9F8D; }
-QMenu::separator { background:#3A4C3B; height:1px; margin:6px 10px; }
-QToolTip { background:#233025; color:#F4F5ED; border:1px solid #65785B; padding:7px; }
-"""
+
 _PATHS = {
     "mic": '<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11v2a6 6 0 0 0 12 0v-2M12 19v3m-3 0h6"/>',
     "stop": '<rect x="6" y="6" width="12" height="12" rx="2"/>',
@@ -67,7 +48,7 @@ _PATHS = {
 
 
 @lru_cache(maxsize=32)
-def line_icon(name, color="#C6D3BE"):
+def line_icon(name, color="#4B6080"):
     svg = f'<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><g fill="none" stroke="{color}" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">{_PATHS[name]}</g></svg>'
     pixmap = QPixmap(48, 48)
     pixmap.fill(Qt.GlobalColor.transparent)
@@ -90,7 +71,7 @@ class DragGrip(QLabel):
         super().__init__(bar)
         self.bar = bar
         self.offset = None
-        self.setPixmap(line_icon("grip", "#8DA084").pixmap(16, 22))
+        self.setPixmap(line_icon("grip", "#8598B3").pixmap(16, 22))
         self.setFixedSize(10, 30)
         self.setCursor(Qt.CursorShape.SizeAllCursor)
         self.setToolTip("Drag to move JoyKeyboard")
@@ -113,6 +94,28 @@ class DragGrip(QLabel):
             self.bar.owner.persist()
 
 
+class GlassShell(QFrame):
+    """Static highlights; no backdrop capture, blur pass or animation timer."""
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        rect = QRectF(self.rect()).adjusted(.5, .5, -.5, -.5)
+        fill = QLinearGradient(0, 0, 0, self.height())
+        for stop, color in ((0, "#FFFFFF"), (.15, "#FAFCFF"), (.48, "#EDF3FC"),
+                            (.52, "#E5EDF9"), (.9, "#F1F6FE"), (1, "#D9E5F5")):
+            fill.setColorAt(stop, QColor(color))
+        painter.setBrush(fill)
+        painter.setPen(QPen(QColor("#B9C9DF"), 1))
+        painter.drawRoundedRect(rect, 17, 17)
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        rim = QLinearGradient(0, 0, 0, self.height())
+        rim.setColorAt(0, QColor(255, 255, 255, 255))
+        rim.setColorAt(1, QColor(255, 255, 255, 100))
+        painter.setPen(QPen(rim, 1))
+        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 16, 16)
+        painter.end()
+
+
 class CompactBar(QWidget):
     def __init__(self, owner):
         flags = (Qt.WindowType.Tool | Qt.WindowType.FramelessWindowHint |
@@ -131,11 +134,11 @@ class CompactBar(QWidget):
         self.setFixedWidth(BAR_WIDTH)
         outer = QVBoxLayout(self)
         outer.setContentsMargins(2, 2, 2, 2)
-        self.shell = QFrame()
+        self.shell = GlassShell()
         self.shell.setObjectName("shell")
         outer.addWidget(self.shell)
         self.body = QVBoxLayout(self.shell)
-        self.body.setContentsMargins(6, 6, 6, 6)
+        self.body.setContentsMargins(7, 7, 7, 7)
         self.body.setSpacing(7)
         row = QHBoxLayout()
         row.setSpacing(4)
@@ -264,12 +267,12 @@ class CompactBar(QWidget):
         self.mode.setToolTip(f"Voice: {owner.language.currentText()}\nKeyboard: {LAYOUTS[owner.settings['keyboard_layout']]}\nClick to change language or layout")
         self.mode.setEnabled(owner.language.isEnabled())
         _flag(self.keyboard_btn, "active", enabled)
-        self.keyboard_btn.setIcon(line_icon("keyboard", "#DEF1A6" if enabled else "#C6D3BE"))
+        self.keyboard_btn.setIcon(line_icon("keyboard", "#0962CA" if enabled else "#4B6080"))
         self.keyboard_btn.setToolTip(f"Keyboard {'ON' if enabled else 'OFF'} · F12\nType ami, then Space → আমি (phonetic)\nSpace or Enter inserts the composed word")
         self.keyboard_btn.setAccessibleName(self.keyboard_btn.toolTip())
         self.keyboard_btn.setEnabled(not recording and not busy)
         _flag(self.record, "recording", recording)
-        self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic", "#26351B"))
+        self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic", "#982638" if recording else "#607591" if busy else "#FFFFFF"))
         self.record.setText("Finish" if recording else "Working" if busy else "Speak")
         self.record.setEnabled(owner.record_btn.isEnabled())
         self.record.setAccessibleName(f"{'Finish and transcribe' if recording else 'Start voice typing'} · {owner.settings['voice_shortcut']}")
@@ -359,7 +362,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.2", lambda: None, enabled=False)
+        self._action(menu, "JoyKeyboard  0.4.3", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):

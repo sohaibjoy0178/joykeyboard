@@ -11,7 +11,7 @@ executable = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "dist"
 archive = CArchiveReader(str(executable))
 python_archive = archive.open_embedded_archive("PYZ.pyz")
 results = {}
-for name in ("app", "core", "voice", "windows", "diagnostics", "keyboard_engine", "keyboard_hook", "tools_ui", "floating_bar", "startup", "hotkeys"):
+for name in ("app", "core", "voice", "windows", "diagnostics", "keyboard_engine", "keyboard_hook", "tools_ui", "floating_bar", "startup", "hotkeys", "theme"):
     code = python_archive.extract(name)
     expected = compile((ROOT / f"{name}.py").read_text(encoding="utf-8"), code.co_filename, "exec")
     results[name] = code == expected

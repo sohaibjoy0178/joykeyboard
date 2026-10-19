@@ -1,15 +1,15 @@
 ---
-name: JoyKeyboard Floating Instrument
+name: JoyKeyboard Pearl Glass
 colors:
-  primary: "#D8ED92"
-  secondary: "#B9CDC6"
-  background: "#101614"
-  surface: "#19221E"
-  raised: "#232E27"
-  border: "#344238"
-  text: "#F4F5ED"
-  muted: "#A4B2A8"
-  error: "#FFB0A5"
+  primary: "#0068D9"
+  secondary: "#E5F0FF"
+  background: "#EEF2F7"
+  surface: "#F8FAFE"
+  raised: "#FFFFFF"
+  border: "#CBD5E3"
+  text: "#172337"
+  muted: "#526279"
+  error: "#AE2638"
 typography:
   headline: { fontFamily: Segoe UI Variable Display, fontSize: 32px, fontWeight: 600, lineHeight: 1.15 }
   body: { fontFamily: Segoe UI, fontSize: 14px, fontWeight: 400, lineHeight: 1.5 }
@@ -29,10 +29,10 @@ spacing:
 # JoyKeyboard
 
 ## Overview
-Quiet premium keyboard and recording instrument: forest-black surfaces, warm ivory text, pale chartreuse action color, original J/microphone mark. The app opens as a compact floating control bar. The studio and tools are secondary workspaces opened from its menu. No borrowed logos.
+Apple-inspired pearl glass translated to a lightweight Windows utility: pale silver layers, a fine white rim, subtle reflected highlights, clear navy typography and restrained blue controls. Original J/microphone mark uses matching silver/blue glass artwork. Compact bar remains the default; studio and tools open on request. No borrowed Apple branding or macOS dependencies.
 
 ## Colors
-Chartreuse reserved for active capture and primary actions. Muted green supports status and controls. Error messages have text plus color.
+Blue identifies primary actions and selected controls. Neutral silver keeps surfaces quiet. A warm rose recording state and readable red errors carry text as well as color. Use the same light palette in every tool, popup, input, selection and help view.
 
 ## Typography
 Native Windows typography ensures readable rendering without remote font dependencies. Bengali uses system Bengali fallback.
@@ -41,7 +41,7 @@ Native Windows typography ensures readable rendering without remote font depende
 Default surface: a 384 by 48 logical-pixel frameless bar, always on top, near the top center of the work area. An icon-only brand and narrow grip leave space for language/layout, keyboard, voice, menu and hide controls. Keep the idle surface to one row; feedback and eight candidates expand only when relevant. Remember position and clamp to a connected screen. Opening a workspace is explicit; closing it returns to the bar. Explicit Quit preserves drafts and worker shutdown. The bar must not take focus from the destination editor.
 
 ## Elevation & Depth
-Use a solid charcoal surface and one fine edge, without blur, shadows, gradients or idle animation. Default opacity is 100% (opaque); offer 90%, 80% and 70% in Preferences and the bar menu, with immediate preview and persistence. Primary voice button in pale chartreuse; muted coral for recording/errors. Repaint and resize only when state changes. Installer uses the original icon, a simple native wizard and an explicit checked-by-default sign-in startup checkbox. Settings reads and controls the same per-user Windows startup entry; startup shows the idle bar without recording.
+The bar paints a static rounded glass shell: silver-to-white reflections, a white rim and a soft lower edge. Workspace uses near-white layered surfaces and segmented navigation. No live blur, refraction shader, desktop capture, animated backgrounds or extra rendering dependency. This is a glass-inspired finish, not Apple's native Liquid Glass renderer. Default opacity stays 100% (opaque); 90/80/70% remain available with immediate preview and persistence. Repaint/resize only when needed. Preserve the 384×48 footprint and focus behavior. Installer retains original icon and sign-in startup checkbox; Settings controls the same per-user entry.
 
 ## Shapes
 Rounded controls and recording panel echo the icon. Transcript text area stays generous and simple.

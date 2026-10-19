@@ -1,4 +1,28 @@
-# JoyKeyboard 0.4.2 verification
+# JoyKeyboard 0.4.3 verification
+
+Delivered `dist/0.4.3/JoyKeyboard-Setup.exe`, **318,743,432 bytes**. SHA-256: `89324f45b507a9b077e6e8e7834d4511ba1e2b43d5bb4ac022aff8c078a33fec`. Installer and checksum are release assets at [v0.4.3](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.3); source and preview images are in Git. Private-repository access is required.
+
+## Pearl Glass interface
+
+Shared silver/blue light theme covers studio, Settings, every writing-tool tab, popup menus, inputs and state feedback. Compact bar uses a static painted shell with reflected highlights, white rim and a fine lower edge; original SVG/PNG/ICO artwork matches. Bar stays 384×48 logical pixels. 100% opacity remains fully opaque inside rounded clear corners; existing 70/80/90% options remain available. No continuous blur, desktop capture, shader, background animation or added runtime dependency. This is Apple-inspired styling, not Apple's native Liquid Glass framework.
+
+Explicit Nirmala UI fallback keeps Bengali controls/transcript/candidates readable even when automatic font fallback chooses a legacy font. Default launch, workspace navigation, keyboard/voice controls, custom global shortcut, credit/Facebook link, data-loss checks and autostart are preserved.
+
+## Executed checks
+
+- **178 pytest cases passed**, `artifacts/tests-0.4.3.log`. New checks verify primary/error/recording/muted text contrast of at least 4.5:1 and the bar's opaque light shell, clear corner and absence of graphics effects. Existing geometry, opacity, voice, keyboard, document and shortcut tests passed. Two upstream Python 3.12 deprecation warnings remain.
+- Actual UI captures inspected for idle bar, Bengali candidates, voice studio with sample text, Settings, keyboard tools, converter, screen keys and DocPad. `tests/render_glass_probe.py` renders from disposable local data without recording/network. Repo preview images: `docs/screenshots/`.
+- Real native editor focus and voice fixture insertion passed with the new bar: `artifacts/floating-native-result.json`. Global shortcut start/finish with bar hidden, no repeat and keyboard pause/resume passed: `artifacts/voice-shortcut-check.json`. These flow tests use fixture microphone/recognizer stubs, actual Windows input and registration.
+- Actual packaged app loaded the saved custom voice shortcut with bar hidden and passed multiword Bangla, fast typing, Backspace and native password pass-through: `artifacts/packaged-keyboard-event-check.json`.
+- Clean PyInstaller/Inno builds passed. Twelve embedded modules plus main matched final sources, including shared theme; required models/assets found: `artifacts/package-code-check.json`.
+- Fresh-folder packaged UI, bundled Base offline English, Google online Bengali, automatic speech-pause Bengali, normal startup and graceful shutdown passed with System32-only PATH, empty app data and downloads disabled: `artifacts/standalone-check.json`.
+- Actual installer install/reinstall/uninstall passed, including startup checkbox default/removal, developer/Facebook publisher values, preserving user data and restoring original test registry/shortcut state: `artifacts/installer-check.json`.
+- Installed idle ten-second sample: **124.48 MiB working set**, **70.02 MiB private committed memory**, **0.469% of one core**. Source smoke probe: 131.77 MiB, 75.97 MiB, 0.937% of one core: `artifacts/glass-idle.json`. Measurements on this Ryzen 9 Windows 11 development PC, not universal ceilings or old-hardware certification. Capture/recognition uses additional resources.
+- Ruff and pip dependency check passed. ICO renderer validated all ten Windows icon sizes.
+
+Installer remains unsigned; no second PC/VM, full application matrix, live physical keyboard or live microphone quality check. Existing offline-Bengali and online-service limitations still apply. No user app was force-terminated.
+
+# Historical 0.4.2 verification
 
 Delivered `dist/0.4.2/JoyKeyboard-Setup.exe`, **318,595,240 bytes**. SHA-256: `81bba8b113debe76bfdae1a7d7f7717bdec46db7f752d16d4a675382d4bb2232`.
 

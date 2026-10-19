@@ -181,6 +181,18 @@ def test_opacity_menu_updates_preferences_and_live_bar(window, qt_app):
     bar._menu.close()
 
 
+def test_glass_shell_is_opaque_readable_and_keeps_clear_corners(window, qt_app):
+    window.show_compact()
+    qt_app.processEvents()
+    shell = window.compact.shell
+    assert shell.graphicsEffect() is None
+    frame = shell.grab().toImage()
+    scale = frame.devicePixelRatio()
+    center = frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale))
+    assert center.alpha() == 255 and min(center.red(), center.green(), center.blue()) > 200
+    assert frame.pixelColor(0, 0).alpha() < 30
+
+
 def test_idle_sync_does_not_relayout_and_record_controls_fit(window, qt_app, monkeypatch):
     bar = window.compact
     window.show_compact()
