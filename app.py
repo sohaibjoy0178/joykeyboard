@@ -33,7 +33,9 @@ from PySide6.QtWidgets import (
 )
 
 import startup
+import updates
 from core import (
+    APP_VERSION,
     DEFAULT_VOICE_SHORTCUT,
     data_directory,
     format_rules,
@@ -132,6 +134,10 @@ class JoyWindow(QMainWindow):
         self.target = None
         self.last_external = None
         self.voice_hotkey = None
+        self.update_job = None
+        self.update_cancel = threading.Event()
+        self.ready_update = None
+        self.update_announced = False
         self.last_hold = False
         self.started = 0.0
         self.last_text = ""
@@ -153,6 +159,9 @@ class JoyWindow(QMainWindow):
         self.keyboard_hook.set_layout(self.settings["keyboard_layout"])
         self.keyboard_hook.set_output_encoding(self.settings["output_encoding"])
         self._build_tray()
+        self.update_timer = QTimer(self)
+        self.update_timer.setInterval(6 * 60 * 60 * 1000)
+        self.update_timer.timeout.connect(self.check_updates)
         self.apply_theme()
         self.poll = QTimer(self)
         self.poll.timeout.connect(self.tick)
@@ -176,6 +185,9 @@ class JoyWindow(QMainWindow):
         self.refresh_devices()
         self.update_engine()
         self.compact.sync_controls()
+        if not smoke and getattr(sys, "frozen", False) and self.auto_updates.isChecked():
+            self.update_timer.start()
+            QTimer.singleShot(10_000, self.check_updates)
 
     def _build_ui(self):
         root = QWidget()
@@ -385,6 +397,23 @@ class JoyWindow(QMainWindow):
             self.autostart.setToolTip("Windows startup settings could not be read.")
         self.autostart.toggled.connect(self.change_autostart)
         layout.addWidget(self.autostart)
+        layout.addWidget(label("App updates · Stable channel", "eyebrow"))
+        self.auto_updates = QCheckBox("Check GitHub and download new versions automatically")
+        self.auto_updates.setChecked(self.settings["auto_updates"])
+        self.auto_updates.setToolTip("Checks after startup and every six hours. Installing always requires your permission.")
+        self.auto_updates.toggled.connect(self.change_auto_updates)
+        layout.addWidget(self.auto_updates)
+        self.update_status = label(f"Version {APP_VERSION} · Installation always asks permission.", "muted", True)
+        if (data_directory() / "updates/install-error.txt").is_file():
+            self.update_status.setText("Previous update did not complete. Check for updates to retry.")
+        layout.addWidget(self.update_status)
+        update_row = QHBoxLayout()
+        self.update_check = button("Check for updates", lambda: self.check_updates(manual=True))
+        update_row.addWidget(self.update_check)
+        self.update_install = button("Install update…", self.install_update)
+        self.update_install.hide()
+        update_row.addWidget(self.update_install)
+        layout.addLayout(update_row)
         encoding_row = QHBoxLayout()
         encoding_row.addWidget(label("Output encoding"))
         self.output_encoding = QComboBox()
@@ -433,7 +462,7 @@ class JoyWindow(QMainWindow):
 <p><b>Appearance and startup:</b> Light Glass and Dark Glass both show actual desktop colors through Windows compositor blur. Choose either in Preferences or the bar menu; choice is remembered. At 100% bar opacity controls stay crisp; Both materials remain translucent. Your selected light/dark theme is saved; older Clear Glass preferences become Light Glass. Drag the title to move the workspace, double-click to maximize/restore, or resize from the lower-right grip. Preferences and the installer offer startup at Windows sign-in, without automatically recording.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.9 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard APP_VERSION · Independently built keyboard and voice utility</p>""".replace("APP_VERSION", APP_VERSION), wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)
@@ -448,8 +477,12 @@ class JoyWindow(QMainWindow):
             action = QAction(text, menu)
             action.triggered.connect(callback)
             menu.addAction(action)
+        self.update_action = QAction("Check for updates", menu)
+        self.update_action.triggered.connect(self.update_menu_clicked)
+        menu.insertAction(menu.actions()[-1], self.update_action)
         self.tray.setContextMenu(menu)
         self.tray.activated.connect(lambda reason: self.show_compact() if reason in (QSystemTrayIcon.ActivationReason.DoubleClick, QSystemTrayIcon.ActivationReason.Trigger) else None)
+        self.tray.messageClicked.connect(self.show_updates)
         if not self.smoke:
             self.tray.show()
 
@@ -457,6 +490,115 @@ class JoyWindow(QMainWindow):
         self.showNormal()
         self.raise_()
         self.activateWindow()
+
+    def show_updates(self):
+        self.open_workspace(2)
+        self.centralWidget().ensureWidgetVisible(self.update_status)
+
+    def change_auto_updates(self, enabled):
+        self.persist()
+        if not enabled:
+            self.update_timer.stop()
+            self.update_cancel.set()
+        elif not self.smoke and getattr(sys, "frozen", False):
+            self.update_timer.start()
+            self.check_updates()
+
+    def update_menu_clicked(self):
+        if self.ready_update is not None:
+            self.install_update()
+        else:
+            self.show_updates()
+            self.check_updates(manual=True)
+
+    def check_updates(self, manual=False):
+        if self.quitting or self.update_job is not None or (not manual and not self.auto_updates.isChecked()):
+            return
+        if not manual and self.ready_update is not None:
+            return
+        if not manual and (self.recorder is not None or self.job is not None):
+            QTimer.singleShot(60_000, self.check_updates)
+            return
+        self.update_cancel = threading.Event()
+        self.update_announced = False
+        self.ready_update = None
+        self.update_install.hide()
+        self.update_check.setEnabled(False)
+        self.update_status.setText("Checking GitHub stable releases…")
+        self.update_action.setText("Checking for updates…")
+        cancel = self.update_cancel
+        job = Job(lambda status: updates.prepare_update(data_directory() / "updates", cancel, status))
+        self.update_job = job
+        job.progress.connect(self.update_progress)
+        job.result.connect(self.update_downloaded)
+        job.failed.connect(self.update_failed)
+        job.finished.connect(self.update_finished)
+        job.start()
+
+    def update_progress(self, message):
+        if self.quitting or self.update_cancel.is_set():
+            return
+        self.update_status.setText(message)
+        self.update_action.setText("Update available · downloading…")
+        if not self.update_announced:
+            self.tray.showMessage("JoyKeyboard update available", message)
+            self.update_announced = True
+
+    def update_downloaded(self, ready):
+        if self.quitting or self.update_cancel.is_set():
+            return
+        self.ready_update = ready
+        if ready is None:
+            self.update_status.setText(f"Version {APP_VERSION} · You are up to date.")
+            self.update_action.setText("Check for updates")
+            return
+        self.update_status.setText(f"Update {ready.release.version} downloaded and verified. Install when you are ready.")
+        self.update_install.setText(f"Install {ready.release.version}…")
+        self.update_install.show()
+        self.update_action.setText(f"Install update {ready.release.version}…")
+        self.tray.showMessage("JoyKeyboard update ready", f"Version {ready.release.version} is ready. Open the bar menu to install with your permission.")
+
+    def update_failed(self, message):
+        if not self.quitting and not self.update_cancel.is_set():
+            self.update_status.setText(message)
+            self.update_action.setText("Check for updates · retry")
+
+    def update_finished(self):
+        job, self.update_job = self.update_job, None
+        if job:
+            job.deleteLater()
+        self.update_check.setEnabled(True)
+        if self.update_cancel.is_set() and not self.quitting:
+            self.update_status.setText("Automatic updates off. Manual checks remain available.")
+            self.update_action.setText("Check for updates")
+        if self.quitting:
+            self.close()
+
+    def install_update(self):
+        if self.ready_update is None or self.quitting:
+            return
+        if self.update_job is not None or self.recorder is not None or self.job is not None or self.tools.ai_job is not None:
+            self.update_status.setText("Finish current voice or assistant work before installing.")
+            self.show_updates()
+            return
+        if not getattr(sys, "frozen", False):
+            self.update_status.setText("Install updates from the installed JoyKeyboard EXE.")
+            self.show_updates()
+            return
+        self.show_updates()
+        answer = QMessageBox.question(self, "Install JoyKeyboard update?",
+            f"Install version {self.ready_update.release.version}?\n\nJoyKeyboard will close, install in the background, then reopen. Settings, learned words and downloaded speech models stay. Save or copy any needed transcript first.",
+            QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No, QMessageBox.StandardButton.No)
+        if answer != QMessageBox.StandardButton.Yes or not self.tools.confirm_document_close():
+            return
+        try:
+            updates.launch_installer(self.ready_update, Path(sys.executable), os.getpid(), startup.is_enabled())
+        except (OSError, updates.UpdateError) as exc:
+            self.update_status.setText(f"Could not start installation. {exc}")
+            self.show_updates()
+            return
+        self.quitting = True
+        self.close()
 
     def show_compact(self):
         self.hide()
@@ -541,7 +683,7 @@ class JoyWindow(QMainWindow):
         self.settings.update(language=self.language.currentData(), engine=self.engine.currentData(),
                              model=self.model.currentData(), device=self.devices.currentData(),
                              auto_type=self.auto_type.isChecked(), bangla_digits=self.digits.isChecked(),
-                             auto_pause=self.auto_pause.isChecked(),
+                             auto_pause=self.auto_pause.isChecked(), auto_updates=self.auto_updates.isChecked(),
                              hold_key=self.hold.isChecked(), system_audio=self.system_audio.isChecked(),
                              output_encoding=self.output_encoding.currentData(),
                              bar_opacity=self.bar_opacity.currentData(), theme=self.theme_choice.currentData())
@@ -796,7 +938,7 @@ class JoyWindow(QMainWindow):
         if self.cancel_event.is_set():
             self.set_status("Cancelled", "Recording discarded. Ready for a new session.")
         if self.quitting:
-            QApplication.quit()
+            self.close()
 
     def prepare_model(self):
         if self.job is not None or self.recorder is not None:
@@ -920,7 +1062,9 @@ class JoyWindow(QMainWindow):
                 QMessageBox.warning(self, "Dictionary not saved", str(exc))
             self.keyboard_closed = True
         self.cancel()
-        if self.job is not None:
+        self.update_timer.stop()
+        self.update_cancel.set()
+        if self.job is not None or self.update_job is not None:
             self.quitting = True
             self.hide()
             self.compact.hide()

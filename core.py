@@ -13,6 +13,7 @@ DEFAULT_RULES = {
     "নতুন লাইন": "\n",
 }
 DEFAULT_VOICE_SHORTCUT = "Ctrl+Alt+Space"
+APP_VERSION = "0.4.10"
 
 
 def parse_voice_shortcut(value):
@@ -57,7 +58,7 @@ DEFAULTS = {
     "auto_type": True, "bangla_digits": False, "hold_key": False, "auto_pause": True,
     "keyboard_layout": "phonetic", "output_encoding": "unicode", "system_audio": False,
     "bar_position": None, "bar_opacity": 100, "theme": "light",
-    "voice_shortcut": DEFAULT_VOICE_SHORTCUT,
+    "voice_shortcut": DEFAULT_VOICE_SHORTCUT, "auto_updates": True,
     "rules": DEFAULT_RULES,
 }
 
@@ -112,7 +113,7 @@ def load_settings(path: Path) -> tuple[dict, str]:
             values["bar_opacity"] = saved["bar_opacity"]
         if isinstance(position, list) and len(position) == 2 and all(type(n) is int and -100000 <= n <= 100000 for n in position):
             values["bar_position"] = position
-        for key in ("auto_type", "bangla_digits", "hold_key", "system_audio", "auto_pause"):
+        for key in ("auto_type", "bangla_digits", "hold_key", "system_audio", "auto_pause", "auto_updates"):
             if type(saved.get(key)) is bool:
                 values[key] = saved[key]
         device = saved.get("device")

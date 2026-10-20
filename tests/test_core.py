@@ -12,6 +12,17 @@ def test_mapping_is_single_pass_and_longest_first():
     assert process_text("HELLO WORLD hello", "en-US", {"hello world": "hello", "hello": "hi"}, False) == "hello hi"
 
 
+def test_auto_updates_default_on_and_only_boolean_preferences_are_loaded(tmp_path):
+    import json
+    path = tmp_path / "settings.json"
+    for value, expected in (({}, True), ({"auto_updates": False}, False), ({"auto_updates": "false"}, True)):
+        path.write_text(json.dumps(value), encoding="utf-8")
+        settings, _ = load_settings(path)
+        assert settings["auto_updates"] is expected
+        save_settings(path, settings)
+        assert load_settings(path)[0]["auto_updates"] is expected
+
+
 def test_bengali_punctuation_digits_and_newline():
     assert process_text("আজ 12 কমা চিহ্ন নতুন লাইন কাল", "bn-BD", DEFAULT_RULES, True) == "আজ ১২,\nকাল"
 

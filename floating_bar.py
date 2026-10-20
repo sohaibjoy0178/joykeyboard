@@ -26,6 +26,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+from core import APP_VERSION
 from keyboard_engine import LAYOUTS
 from theme import paint_glass, round_window, style_sheet
 from windows import set_glass_blur
@@ -379,7 +380,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.9", lambda: None, enabled=False)
+        self._action(menu, f"JoyKeyboard  {APP_VERSION}", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):
@@ -402,6 +403,7 @@ class CompactBar(QWidget):
         self._choices(menu.addMenu("Theme"), owner.theme_choice)
         self._choices(menu.addMenu("Bar opacity"), owner.bar_opacity)
         self._action(menu, "Preferences", lambda: owner.open_workspace(2))
+        self._action(menu, owner.update_action.text(), owner.update_menu_clicked)
         self._action(menu, "Help and privacy", lambda: owner.open_workspace(3))
         self._action(menu, "Developed by Sohaib Islam Joy", lambda: owner.open_workspace(3))
         menu.addSeparator()

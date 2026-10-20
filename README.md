@@ -1,4 +1,4 @@
-# JoyKeyboard 0.4.9
+# JoyKeyboard 0.4.10
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
@@ -12,7 +12,7 @@ Windows Bengali/English keyboard and voice studio. Independently built; no NMS K
 
 ## Install with one EXE
 
-Open **dist/0.4.9/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition, choose Tiny/Base/Small and click **Download offline model** once; then use Whisper without internet. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
+Open **dist/0.4.10/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition, choose Tiny/Base/Small and click **Download offline model** once; then use Whisper without internet. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
 
 Installer's **Select Additional Tasks** page offers **Start JoyKeyboard when I sign in to Windows**, checked by default, plus an optional desktop shortcut. Change startup any time under **Preferences → Appearance & startup**. Both use the same HKCU Run entry. Startup displays the idle floating bar; it never starts recording automatically. Windows Startup Apps policies can override startup. App uses one instance per user.
 
@@ -35,7 +35,19 @@ The workspace has a draggable title (double-click maximize/restore), minimize/cl
 
 ## Download from GitHub
 
-[Latest installer and source release](https://github.com/sohaibjoy0178/joykeyboard/releases/latest). Download **JoyKeyboard-Setup.exe** and install; no ZIP extraction needed. `SHA256SUMS.txt` accompanies the installer. Repository is private, so sign in with an authorized GitHub account. EXE is attached to GitHub Releases; source/build scripts remain in Git history. Large offline model weights are downloaded only when explicitly requested in Preferences; they are excluded from the installer and Git source history. Previously downloaded models remain usable.
+[Latest installer and source release](https://github.com/sohaibjoy0178/joykeyboard/releases/latest). Download **JoyKeyboard-Setup.exe** and install; no ZIP extraction needed. `SHA256SUMS.txt` accompanies the installer. Repository and published releases are public; no GitHub login or token is needed. EXE is attached to GitHub Releases; source/build scripts remain in Git history. Large offline model weights are downloaded only when explicitly requested in Preferences; they are excluded from the installer and Git source history. Previously downloaded models remain usable.
+
+## App updates
+
+Install **0.4.10 or newer once** to enable in-app updates. The installed EXE checks GitHub's latest published **stable release** about ten seconds after launch and every six hours. Automatic checks defer while voice work is active. A plain Git push without a published installer release is not an app update; drafts, prereleases and older versions are ignored.
+
+When a newer version exists, JoyKeyboard shows a notification and downloads its installer on a separate worker. Download size and GitHub's SHA-256 digest must match before installation is offered. Checks use public GitHub HTTPS endpoints without bundled credentials. GitHub can limit requests; offline/rate-limit failures leave the app running and can be retried. This checks download integrity, not a Microsoft code-signing certificate; installers remain unsigned.
+
+Choose **bar/tray menu → Install update**, or **Preferences → App updates → Install**. **Installation always asks permission**, with No selected by default. A ready update waits for your decision instead of being discarded by periodic checks. Finish voice/assistant work first, save/copy any needed transcript, and answer existing unsaved-document prompts. After approval the app exits normally; a hidden Windows PowerShell helper waits for exit, rechecks the installer using built-in .NET hashing, installs without restarting Windows, and reopens JoyKeyboard. Settings, words, downloaded models, installation folder and sign-in startup choice are preserved. Failed installation reopens the existing copy and leaves a retry message in update settings. Administrator policy can block PowerShell or installers.
+
+**Preferences → App updates** provides manual checks and a switch to disable automatic checks/downloads. Updates cache uses one installer plus a temporary partial download; interrupted files never replace a verified cache. Quitting cancels network work and lets its worker finish safely. The floating bar stays 384×48 with the existing hover shortcuts.
+
+For maintainers: bump `APP_VERSION` in `core.py` and installer/build paths, build and verify the EXE, upload `JoyKeyboard-Setup.exe` plus `SHA256SUMS.txt` to a draft `vX.Y.Z` release, verify assets, then publish it as Latest. GitHub supplies the asset SHA-256 consumed by the updater. Never attach an older installer under a newer version tag.
 
 ## Resource use
 
@@ -104,7 +116,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipInstall
 powershell -ExecutionPolicy Bypass -File .\build-installer.ps1 -SkipInstall
 ```
 
-`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.9/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. Offline model weights are not required to build and are never bundled. `assets/models/` supplies provenance and MIT notices. SpeechRecognition data includes only its required version file and Windows FLAC encoder; unused PocketSphinx models and other-platform encoders are excluded. Only the three README preview images are bundled. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
+`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.10/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. Offline model weights are not required to build and are never bundled. `assets/models/` supplies provenance and MIT notices. SpeechRecognition data includes only its required version file and Windows FLAC encoder; unused PocketSphinx models and other-platform encoders are excluded. Only the three README preview images are bundled. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
 
 ## Licenses and replacement
 

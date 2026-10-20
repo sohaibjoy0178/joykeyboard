@@ -113,6 +113,116 @@ def test_custom_voice_shortcut_updates_hints_and_default_reset(window):
     assert "Ctrl+Alt+Space" in window.compact.record.toolTip()
 
 
+def test_updates_download_on_separate_worker_and_manual_check_works_when_auto_off(window, qt_app, monkeypatch):
+    window.auto_updates.setChecked(False)
+    assert window.settings["auto_updates"] is False and not window.update_timer.isActive()
+    assert window.update_cancel.is_set()
+    assert window.update_job is None
+    def no_new_release(directory, cancel, status):
+        return None
+    monkeypatch.setattr("app.updates.prepare_update", no_new_release)
+    voice_job = object()
+    window.job = voice_job
+    window.check_updates(manual=True)
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.update_job is None:
+            break
+    assert window.update_job is None and window.job is voice_job
+    assert "up to date" in window.update_status.text() and window.update_check.isEnabled()
+    window.job = None
+
+
+def test_update_check_failure_is_nonblocking_and_can_retry(window, qt_app, monkeypatch):
+    from updates import UpdateError
+    def unavailable(*args):
+        raise UpdateError("Check internet and retry")
+    monkeypatch.setattr("app.updates.prepare_update", unavailable)
+    window.check_updates(manual=True)
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.update_job is None:
+            break
+    assert "internet" in window.update_status.text()
+    assert window.update_job is None and window.update_check.isEnabled()
+    assert window.ready_update is None and not window.quitting
+
+
+def test_pending_update_waits_for_permission_instead_of_periodic_rechecks(window, monkeypatch):
+    from unittest.mock import Mock
+    prepare = Mock()
+    monkeypatch.setattr("app.updates.prepare_update", prepare)
+    ready = object()
+    window.ready_update = ready
+    window.check_updates()
+    prepare.assert_not_called()
+    assert window.update_job is None and window.ready_update is ready
+
+
+def test_update_install_requires_explicit_yes_and_document_permission(window, monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from PySide6.QtWidgets import QMessageBox
+    monkeypatch.setattr("app.sys.frozen", True, raising=False)
+    ready = SimpleNamespace(release=SimpleNamespace(version="0.5.0"))
+    window.update_downloaded(ready)
+    launch = Mock()
+    monkeypatch.setattr("app.updates.launch_installer", launch)
+    question = Mock(return_value=QMessageBox.StandardButton.No)
+    monkeypatch.setattr(QMessageBox, "question", question)
+    window.install_update()
+    assert question.call_args.args[-1] == QMessageBox.StandardButton.No
+    launch.assert_not_called()
+    assert not window.quitting
+    question.return_value = QMessageBox.StandardButton.Yes
+    monkeypatch.setattr(window.tools, "confirm_document_close", lambda: False)
+    window.install_update()
+    launch.assert_not_called()
+    assert not window.quitting
+    monkeypatch.setattr(window.tools, "confirm_document_close", lambda: True)
+    monkeypatch.setattr("app.startup.is_enabled", lambda: False)
+    window.install_update()
+    assert launch.call_count == 1 and launch.call_args.args[0] is ready
+    assert launch.call_args.args[-1] is False and window.quitting
+
+
+def test_update_cannot_install_during_recording_and_failed_handoff_leaves_app_open(window, monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    from PySide6.QtWidgets import QMessageBox
+    monkeypatch.setattr("app.sys.frozen", True, raising=False)
+    window.ready_update = SimpleNamespace(release=SimpleNamespace(version="0.5.0"))
+    launch = Mock(side_effect=OSError("helper unavailable"))
+    monkeypatch.setattr("app.updates.launch_installer", launch)
+    window.recorder = object()
+    window.install_update()
+    launch.assert_not_called()
+    assert "Finish current voice" in window.update_status.text()
+    window.recorder = None
+    monkeypatch.setattr(QMessageBox, "question", lambda *args: QMessageBox.StandardButton.Yes)
+    monkeypatch.setattr(window.tools, "confirm_document_close", lambda: True)
+    window.install_update()
+    assert "helper unavailable" in window.update_status.text() and not window.quitting
+
+
+def test_quit_cancels_update_worker_and_waits_for_finish(window, qt_app, monkeypatch):
+    from updates import UpdateCancelled
+    def downloading(directory, cancel, status):
+        assert cancel.wait(2)
+        raise UpdateCancelled("cancelled")
+    monkeypatch.setattr("app.updates.prepare_update", downloading)
+    window.check_updates(manual=True)
+    assert window.update_job is not None
+    window.request_quit()
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.update_job is None:
+            break
+    assert window.update_cancel.is_set() and window.update_job is None and window.quitting
+
+
 def test_shortcut_editor_records_chord_and_apply_button_saves_it(window, qt_app):
     window.open_workspace(2)
     window.shortcut_edit.setFocus()
