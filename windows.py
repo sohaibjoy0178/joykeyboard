@@ -58,6 +58,30 @@ def key_down(key: int) -> bool:
     return IS_WINDOWS and bool(user32.GetAsyncKeyState(key) & 0x8000)
 
 
+class AccentPolicy(ctypes.Structure):
+    _fields_ = [(name, w.DWORD) for name in ("state", "flags", "color", "animation")]
+
+
+class CompositionAttribute(ctypes.Structure):
+    _fields_ = [("kind", w.DWORD), ("data", ctypes.c_void_p), ("size", ctypes.c_size_t)]
+
+
+def set_glass_blur(hwnd: int, enabled: bool) -> bool:
+    """Use compositor blur without capturing the desktop or fading foreground controls."""
+    if not IS_WINDOWS:
+        return False
+    try:
+        # shortcut: this Windows 10/11 composition entry point is undocumented; retain painted fallback.
+        function = user32.SetWindowCompositionAttribute
+        function.argtypes = [w.HWND, ctypes.POINTER(CompositionAttribute)]
+        function.restype = w.BOOL
+        policy = AccentPolicy(3 if enabled else 0, 0, 0, 0)
+        attribute = CompositionAttribute(19, ctypes.addressof(policy), ctypes.sizeof(policy))
+        return bool(function(hwnd, ctypes.byref(attribute)))
+    except (AttributeError, OSError):
+        return False
+
+
 def foreground_target() -> Target | None:
     if not IS_WINDOWS:
         return None

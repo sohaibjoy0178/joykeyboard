@@ -1,18 +1,16 @@
-# JoyKeyboard 0.4.4
+# JoyKeyboard 0.4.5
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
 Windows Bengali/English keyboard and voice studio. Independently built; no NMS Kontho proprietary code, dictionaries, branding, credentials or license checks reused. Original J/microphone icon included.
 
-![Pearl Glass floating bar](docs/screenshots/glass-bar.png)
+![Clear Glass floating bar over a controlled test backdrop](docs/screenshots/clear-bar-composited.png)
 
-![Dark Glass floating bar](docs/screenshots/glass-dark-bar.png)
-
-![Dark Glass voice studio, shown with sample text](docs/screenshots/glass-dark-studio.png)
+![Clear Glass studio over a controlled test backdrop, with sample text](docs/screenshots/clear-studio-composited.png)
 
 ## Install with one EXE
 
-Open **dist/0.4.4/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, libraries, dictionaries and multilingual Whisper Base/Tiny weights are included. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 1 GB free installation space. Settings and learned words stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
+Open **dist/0.4.5/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, libraries, dictionaries and multilingual Whisper Base/Tiny weights are included. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 1 GB free installation space. Settings and learned words stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
 
 Installer's **Select Additional Tasks** page offers **Start JoyKeyboard when I sign in to Windows**, checked by default, plus an optional desktop shortcut. Change startup any time under **Preferences → Appearance & startup**. Both use the same HKCU Run entry. Startup displays the idle floating bar; it never starts recording automatically. Windows Startup Apps policies can override startup. App uses one instance per user.
 
@@ -24,7 +22,12 @@ The app opens as a **384 × 48 logical-pixel floating bar**, always on top. Drag
 
 The **three-dot menu** reaches every tool, speech engine, microphone/computer audio choice, Unicode/Bijoy output, automatic typing, Preferences and privacy help. Click the **Joy icon** for the full workspace. Closing the workspace returns to the bar and keeps drafts; **Quit JoyKeyboard** in the bar/tray menu exits with unsaved-draft checks. The minus button hides the idle bar to the notification area; click the tray icon to restore it. Errors/transcript feedback appear in an expandable strip with Copy/Open controls.
 
-**Light and Dark Glass:** Choose **Theme → Dark Glass** in the three-dot bar menu, or **Preferences → Appearance & startup → Theme**. Black/charcoal glass with silver text, or the original light silver finish. Switch instantly; choice is saved for next launch. Studio, Settings, all writing tools, inputs, candidate words, tray and popup menus follow the chosen theme. Reflected highlights, fine edges, rounded blue controls and original icon stay consistent. Explicit Nirmala UI fallback keeps Bengali text readable. The compact bar remains 384×48. **Bar opacity** in its menu or Preferences offers 70/80/90/100%; **100% is fully opaque** and is the default. Rounded corners remain clear. This lightweight glass finish uses static Qt painting, without native Apple Liquid Glass, continuous desktop blur, refraction shaders or an animation timer. Showing the bar and clicking keyboard/voice buttons preserves destination focus in the native editor checks.
+**Clear Glass interface:** Real per-pixel transparency with Windows compositor blur, neutral silver tint and fine reflective edges. Desktop colors show through bar and workspace; foreground text/icons stay crisp at 100% bar opacity. Select **Theme → Clear Glass** from the three-dot menu or **Preferences → Appearance & startup → Theme**. Clear Glass is the default for new profiles; old Dark Glass preferences migrate automatically. Existing Light Glass preferences stay opaque. All six tools and inputs use translucent layers; native menus remain opaque for readability. Screenshots above show the actual app over an owned test backdrop, not a wallpaper built into the app.
+
+**Light Glass** remains available for fully opaque surfaces and lower graphics cost. Windows blur availability varies by OS/settings/driver; unavailable native blur falls back to a denser translucent tint. Uses an optional Windows composition entry point with failure handling, no new library, desktop-capture loop, refraction shader or animation timer. This is a Windows glass treatment inspired by Apple, not Apple's proprietary renderer. Foreground opacity remains independently adjustable (70/80/90/100%); 100% keeps controls crisp while Clear Glass material stays see-through. Text contrast depends on what's behind the window; choose Light Glass for consistently opaque surfaces.
+
+The workspace has a draggable title (double-click maximize/restore), minimize/close-to-bar buttons and a lower-right resize grip. Closing still preserves drafts and returns to the floating bar. Native file dialogs retain Windows appearance.
+
 
 ## Download from GitHub
 
@@ -97,7 +100,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipInstall
 powershell -ExecutionPolicy Bypass -File .\build-installer.ps1 -SkipInstall
 ```
 
-`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.4/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. `assets/models/` must contain supplied Base/Tiny files; obtain unmodified files from repositories in `assets/models/SOURCES.txt` when rebuilding without weights. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
+`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.5/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. `assets/models/` must contain supplied Base/Tiny files; obtain unmodified files from repositories in `assets/models/SOURCES.txt` when rebuilding without weights. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
 
 ## Licenses and replacement
 

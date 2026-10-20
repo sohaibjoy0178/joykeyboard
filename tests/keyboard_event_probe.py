@@ -79,6 +79,8 @@ def probe(executable=None):
         clicks = (Input * 2)(Input(0, InputUnion(mi=MouseInput(0, 0, 0, 2, 0, 0))),
                               Input(0, InputUnion(mi=MouseInput(0, 0, 0, 4, 0, 0))))
         user32.SendInput(2, clicks, ctypes.sizeof(Input))
+        wait_for(lambda: foreground_target() and foreground_target().pid == owned_pid,
+                 "Owned editor did not receive click focus")
         user32.SetWindowPos(hwnd, w.HWND(-2), 0, 0, 0, 0, 0x13)
         user32.SetCursorPos(old_cursor.x, old_cursor.y)
         wait_for(lambda: foreground_target() and foreground_target().pid == owned_pid,
@@ -86,7 +88,7 @@ def probe(executable=None):
         if executable:
             profile = directory / "profile/JoyKeyboard"
             profile.mkdir(parents=True)
-            settings = {"bar_position": [300, 20], "theme": "dark"}
+            settings = {"bar_position": [300, 20], "theme": "glass"}
             if "--voice-shortcut" in sys.argv:
                 settings.update(voice_shortcut="Ctrl+Alt+Shift+F9", engine="offline", model="small")
             (profile / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
@@ -95,12 +97,16 @@ def probe(executable=None):
             app_env.pop("PYTHONPATH", None)
             app_env.pop("PYTHONHOME", None)
             app_process = subprocess.Popen([str(executable)], env=app_env, creationflags=subprocess.CREATE_NO_WINDOW)
-            wait_for(lambda: bool(close_owned_window(executable, close=False)), "Packaged bar did not appear", timeout=30)
+            user32.IsWindowVisible.argtypes = [w.HWND]
+            def bar_ready():
+                bars = close_owned_window(executable, close=False)
+                return bool(bars and user32.IsWindowVisible(bars[0]))
+            # Native glass creates its handle before registration; wait for completed startup/show.
+            wait_for(bar_ready, "Packaged bar did not appear", timeout=30)
             bar = close_owned_window(executable, close=False)[0]
             user32.GetWindowRect(bar, ctypes.byref(rectangle))
             scale = (rectangle.right - rectangle.left) / 384
             if "--voice-shortcut" in sys.argv:
-                user32.IsWindowVisible.argtypes = [w.HWND]
                 user32.SetCursorPos(rectangle.left + round(364 * scale), rectangle.top + round(24 * scale))
                 assert user32.SendInput(2, clicks, ctypes.sizeof(Input)) == 2
                 wait_for(lambda: not user32.IsWindowVisible(bar), "Bar did not hide to tray")
@@ -113,9 +119,10 @@ def probe(executable=None):
                 # Missing Small model intentionally prevents microphone capture; shortcut reveals its error.
                 wait_for(lambda: bool(user32.IsWindowVisible(bar)), "Saved global shortcut did not reach packaged app")
                 assert foreground_target().pid == owned_pid
-                time.sleep(.2)
-                user32.GetWindowRect(bar, ctypes.byref(rectangle))
-                assert (rectangle.bottom - rectangle.top) / scale > 48, "No missing-model feedback"
+                def feedback_visible():
+                    user32.GetWindowRect(bar, ctypes.byref(rectangle))
+                    return (rectangle.bottom - rectangle.top) / scale > 48
+                wait_for(feedback_visible, "No missing-model feedback")
             # The fixed compact layout puts the keyboard icon at (192, 24) logical pixels.
             user32.SetCursorPos(rectangle.left + round(192 * scale), rectangle.top + round(24 * scale))
             assert user32.SendInput(2, clicks, ctypes.sizeof(Input)) == 2
@@ -142,7 +149,7 @@ def probe(executable=None):
         report = dict(passed=True, actual=info()["actual"], real_windows_hook=True,
                       input="Windows SendInput virtual-key events, no direct composition calls",
                       physical_hardware_tested=False, packaged=bool(executable),
-                      packaged_saved_theme="dark" if executable else None,
+                      packaged_saved_theme="glass" if executable else None,
                       packaged_saved_voice_shortcut="--voice-shortcut" in sys.argv,
                       fast_multiword_input=True, backspace_composition=True, native_password_passthrough=True,
                       slow_suggestions="--slow-suggestions" in sys.argv,

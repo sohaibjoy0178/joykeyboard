@@ -64,9 +64,9 @@ def test_opacity_cannot_make_bar_invisible_and_migrates_old_settings(tmp_path):
 def test_theme_migrates_validates_and_roundtrips(tmp_path):
     import json
     path = tmp_path / "settings.json"
-    for saved, expected in (({}, "light"), ({"theme": "dark"}, "dark"),
-                            ({"theme": "light"}, "light"), ({"theme": "auto"}, "light"),
-                            ({"theme": ["dark"]}, "light"), ({"theme": None}, "light")):
+    for saved, expected in (({}, "glass"), ({"theme": "dark"}, "glass"), ({"theme": "glass"}, "glass"),
+                            ({"theme": "light"}, "light"), ({"theme": "auto"}, "glass"),
+                            ({"theme": ["dark"]}, "glass"), ({"theme": None}, "glass")):
         path.write_text(json.dumps(saved), encoding="utf-8")
         settings, warning = load_settings(path)
         assert settings["theme"] == expected and not warning

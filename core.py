@@ -56,7 +56,7 @@ DEFAULTS = {
     "language": "bn-BD", "engine": "google", "model": "base", "device": None,
     "auto_type": True, "bangla_digits": False, "hold_key": False, "auto_pause": True,
     "keyboard_layout": "phonetic", "output_encoding": "unicode", "system_audio": False,
-    "bar_position": None, "bar_opacity": 100, "theme": "light",
+    "bar_position": None, "bar_opacity": 100, "theme": "glass",
     "voice_shortcut": DEFAULT_VOICE_SHORTCUT,
     "rules": DEFAULT_RULES,
 }
@@ -92,10 +92,12 @@ def load_settings(path: Path) -> tuple[dict, str]:
             raise ValueError("Settings must be a JSON object.")
         for key, allowed in {"language": ("bn-BD", "en-US"),
                              "engine": ("google", "offline"),
-                             "theme": ("light", "dark"),
+                             "theme": ("light", "glass"),
                              "model": ("tiny", "base", "small")}.items():
             if saved.get(key) in allowed:
                 values[key] = saved[key]
+        if saved.get("theme") == "dark":
+            values["theme"] = "glass"
         if saved.get("keyboard_layout") in ("phonetic", "english", "probhat", "inscript"):
             values["keyboard_layout"] = saved["keyboard_layout"]
         if saved.get("output_encoding") in ("unicode", "bijoy"):

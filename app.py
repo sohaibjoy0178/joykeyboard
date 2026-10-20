@@ -25,6 +25,7 @@ from PySide6.QtWidgets import (
     QProgressBar,
     QPushButton,
     QScrollArea,
+    QSizeGrip,
     QSystemTrayIcon,
     QTabWidget,
     QVBoxLayout,
@@ -46,17 +47,32 @@ from floating_bar import CompactBar
 from hotkeys import VoiceHotkey
 from keyboard_engine import LAYOUTS, KeyboardEngine, to_ansi
 from keyboard_hook import KeyboardHook
-from theme import style_sheet
+from theme import paint_glass, round_window, style_sheet
 from tools_ui import KeyboardTools
 from voice import LoopbackRecorder, PauseMonitor, Recognizer, Recorder, list_microphones
-from windows import foreground_target, insert_text, key_down
+from windows import foreground_target, insert_text, key_down, set_glass_blur
 
 ASSETS = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "assets"
 
 
 
+class WindowTitle(QLabel):
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.window().windowHandle().startSystemMove()
+        else:
+            super().mousePressEvent(event)
+
+    def mouseDoubleClickEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            window = self.window()
+            window.showNormal() if window.isMaximized() else window.showMaximized()
+
+
 def label(text, role=None, wrap=False):
-    item = QLabel(text)
+    item = WindowTitle(text) if role == "title" else QLabel(text)
+    if role == "title":
+        item.setToolTip("Drag to move · double-click to maximize / restore")
     item.setWordWrap(wrap)
     if role:
         item.setObjectName(role)
@@ -93,6 +109,9 @@ class JoyWindow(QMainWindow):
 
     def __init__(self, smoke=False):
         super().__init__()
+        self.setWindowFlag(Qt.WindowType.FramelessWindowHint)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.native_glass = False
         self.smoke = smoke
         self.settings_path = data_directory() / "settings.json"
         self.settings, warning = load_settings(self.settings_path)
@@ -182,7 +201,19 @@ class JoyWindow(QMainWindow):
         header.addStretch()
         self.keyboard_toggle = button("Keyboard OFF · F12", self.toggle_keyboard)
         header.addWidget(self.keyboard_toggle)
-        header.addWidget(button("Return to floating bar", self.show_compact))
+        header.addWidget(button("Floating bar", self.show_compact))
+        minimize = button("−", self.showMinimized)
+        minimize.setFixedSize(36, 36)
+        minimize.setStyleSheet("padding:0; font-size:20px;")
+        minimize.setToolTip("Minimize workspace")
+        minimize.setAccessibleName("Minimize workspace")
+        header.addWidget(minimize)
+        close = button("×", self.close)
+        close.setFixedSize(36, 36)
+        close.setStyleSheet("padding:0; font-size:20px;")
+        close.setToolTip("Close workspace · return to floating bar")
+        close.setAccessibleName("Close workspace")
+        header.addWidget(close)
         page.addLayout(header)
         self.tabs = QTabWidget()
         page.addWidget(self.tabs)
@@ -280,7 +311,10 @@ class JoyWindow(QMainWindow):
         self._build_help()
         self.message = label("No account. No subscription. Your choice of online or local recognition.", "muted", True)
         self.message.setMinimumHeight(40)
-        page.addWidget(self.message)
+        footer = QHBoxLayout()
+        footer.addWidget(self.message, 1)
+        footer.addWidget(QSizeGrip(self), 0, Qt.AlignmentFlag.AlignBottom)
+        page.addLayout(footer)
         for combo in (self.language, self.engine, self.devices, self.model):
             combo.currentIndexChanged.connect(self.persist)
         self.engine.currentIndexChanged.connect(self.update_engine)
@@ -325,8 +359,8 @@ class JoyWindow(QMainWindow):
         theme_row = QHBoxLayout()
         theme_row.addWidget(label("Theme"))
         self.theme_choice = QComboBox()
-        self.theme_choice.addItem("Light Glass", "light")
-        self.theme_choice.addItem("Dark Glass", "dark")
+        self.theme_choice.addItem("Clear Glass · transparent", "glass")
+        self.theme_choice.addItem("Light Glass · opaque", "light")
         self.theme_choice.setCurrentIndex(self.theme_choice.findData(self.settings["theme"]))
         self.theme_choice.setAccessibleName("Application theme")
         self.theme_choice.currentIndexChanged.connect(self.change_theme)
@@ -336,7 +370,7 @@ class JoyWindow(QMainWindow):
         appearance.addWidget(label("Floating bar opacity"))
         self.bar_opacity = QComboBox()
         for value in (100, 90, 80, 70):
-            self.bar_opacity.addItem("100% · opaque" if value == 100 else f"{value}%", value)
+            self.bar_opacity.addItem("100% · crisp controls" if value == 100 else f"{value}%", value)
         self.bar_opacity.setCurrentIndex(self.bar_opacity.findData(self.settings["bar_opacity"]))
         self.bar_opacity.setAccessibleName("Floating bar opacity")
         self.bar_opacity.currentIndexChanged.connect(self.persist)
@@ -396,10 +430,10 @@ class JoyWindow(QMainWindow):
 <p><b>Compatibility:</b> Windows 10/11, 64-bit Intel/AMD. Microphone required. Automatic typing works in many standard text fields; elevated apps, secure fields and some custom editors may block it. Copy transcript when needed.</p>
 <p><b>Your data:</b> audio is not saved automatically. Local dictionary learning and word transitions are saved on quit; no cloud upload. Gemini text assistance uploads only text you explicitly submit with your own session key. Preferences and user models live in your local JoyKeyboard data folder.</p>
 <p><b>Floating bar:</b> opens on launch. Drag the grip to move it; position is remembered. The language/layout selector and menu reach voice engines, inputs, output encoding and every tool. Closing this workspace returns to the bar; use Quit in its menu to exit.</p>
-<p><b>Appearance and startup:</b> Choose Light Glass or Dark Glass in Preferences or the bar menu. Theme changes immediately and is remembered. Bar opacity is independent (100% is opaque). Preferences and the installer offer starting at Windows sign-in. Startup never enables the microphone automatically.</p>
+<p><b>Appearance and startup:</b> Clear Glass shows actual desktop colors through Windows compositor blur. Light Glass uses opaque surfaces. Choose either in Preferences or the bar menu; choice is remembered. At 100% bar opacity controls stay crisp; Clear Glass material remains translucent. Older Dark Glass preferences upgrade to Clear Glass. Drag the title to move the workspace, double-click to maximize/restore, or resize from the lower-right grip. Preferences and the installer offer startup at Windows sign-in, without automatically recording.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.4 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.5 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)
@@ -526,6 +560,27 @@ class JoyWindow(QMainWindow):
         self.tools.setStyleSheet(style_sheet("tools", self.settings["theme"]))
         self.tray.contextMenu().setStyleSheet(style_sheet("bar", self.settings["theme"]))
         self.compact.apply_theme()
+        self._refresh_blur()
+        round_window(self, 0 if self.isMaximized() else 24)
+        self.update()
+
+    def _refresh_blur(self):
+        self.native_glass = set_glass_blur(int(self.winId()), self.settings["theme"] == "glass")
+        self.update()
+
+    def showEvent(self, event):
+        super().showEvent(event)
+        QTimer.singleShot(0, self._refresh_blur)
+
+    def paintEvent(self, event):
+        if self.settings["theme"] == "glass":
+            paint_glass(self, 0 if self.isMaximized() else 24, not self.native_glass)
+        else:
+            super().paintEvent(event)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        round_window(self, 0 if self.isMaximized() else 24)
 
     def change_theme(self):
         self.settings["theme"] = self.theme_choice.currentData()

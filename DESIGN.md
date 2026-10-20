@@ -1,5 +1,5 @@
 ---
-name: JoyKeyboard Pearl Glass
+name: JoyKeyboard Clear Glass
 colors:
   primary: "#0068D9"
   secondary: "#E5F0FF"
@@ -29,10 +29,10 @@ spacing:
 # JoyKeyboard
 
 ## Overview
-Apple-inspired glass translated to a lightweight Windows utility. Light Glass uses pale silver layers and navy type. Dark Glass uses black/charcoal layers (#111318 background, #1C2027 surfaces), ivory text (#EDF2FA), muted silver (#ADB9CC), blue controls and a subtle reflected rim. Preferences and the bar menu switch both themes instantly and remember the choice. Existing installations default to Light Glass. Original J/microphone mark uses silver/blue glass artwork. Compact bar remains the default; studio and tools open on request. No borrowed Apple branding or macOS dependencies.
+Clear Glass is the default: genuine per-pixel transparency over Windows compositor blur, a neutral silver tint, narrow reflective rims and crisp navy text/blue controls. Background colors come from the desktop, never a simulated in-app wallpaper. Old Dark Glass preferences migrate to Clear Glass. Light Glass remains an opaque fallback. Both themes preserve keyboard, voice and data behavior.
 
 ## Colors
-Blue identifies primary actions and selected controls. Neutral silver or charcoal keeps surfaces quiet. A rose recording state and readable red errors carry text as well as color. Apply the chosen palette to every tool, popup, input, selection and help view. Dark errors use #FFABB8 against charcoal; selections use #263E61 with ivory text. Opacity remains independent of theme. Dark glass uses the same static painting, without extra timers or background capture.
+Clear outer shell alpha varies from 140 to 150/255, with white control/input overlays at 155/255 for legibility. No charcoal slabs. Foreground controls remain opaque; only materials are translucent. Unsupported blur uses a denser painted tint (210/255). Native popup menus remain readable opaque silver. No continuously captured desktop, animation timer or added dependency. Actual contrast depends on backdrop; Light Glass is available for consistently opaque text surfaces.
 
 ## Typography
 Native Windows typography ensures readable rendering without remote font dependencies. Bengali uses system Bengali fallback.
@@ -41,7 +41,7 @@ Native Windows typography ensures readable rendering without remote font depende
 Default surface: a 384 by 48 logical-pixel frameless bar, always on top, near the top center of the work area. An icon-only brand and narrow grip leave space for language/layout, keyboard, voice, menu and hide controls. Keep the idle surface to one row; feedback and eight candidates expand only when relevant. Remember position and clamp to a connected screen. Opening a workspace is explicit; closing it returns to the bar. Explicit Quit preserves drafts and worker shutdown. The bar must not take focus from the destination editor.
 
 ## Elevation & Depth
-The bar paints a static rounded glass shell: silver-to-white reflections, a white rim and a soft lower edge. Workspace uses near-white layered surfaces and segmented navigation. No live blur, refraction shader, desktop capture, animated backgrounds or extra rendering dependency. This is a glass-inspired finish, not Apple's native Liquid Glass renderer. Default opacity stays 100% (opaque); 90/80/70% remain available with immediate preview and persistence. Repaint/resize only when needed. Preserve the 384×48 footprint and focus behavior. Installer retains original icon and sign-in startup checkbox; Settings controls the same per-user entry.
+Bar and workspace use Windows compositor blur beneath a translucent painted shell. Window regions clip blur to rounded corners. Keep bar footprint/focus behavior and 70/80/90/100% foreground opacity option. At 100% foreground remains fully opaque while Clear Glass background is translucent. Light Glass at 100% remains fully opaque. Workspace uses a draggable title, double-click maximize/restore, minimize, close-to-bar and a resize grip because native frames cannot provide Qt per-pixel transparency. Native OS dialogs retain Windows styling. Windows blur is not Apple's proprietary Liquid Glass renderer; no refraction shader is claimed.
 
 ## Shapes
 Rounded controls and recording panel echo the icon. Transcript text area stays generous and simple.

@@ -34,7 +34,7 @@ def probe():
             raise RuntimeError("Existing JoyKeyboard installation found; do not overwrite its uninstall record.")
     except FileNotFoundError:
         pass
-    setup = ROOT / "dist" / "0.4.4" / "JoyKeyboard-Setup.exe"
+    setup = ROOT / "dist" / "0.4.5" / "JoyKeyboard-Setup.exe"
     directory = Path(tempfile.mkdtemp(prefix="joykeyboard-install-check-"))
     installed = directory / "App With Spaces"
     shortcut = Path(os.environ["APPDATA"]) / "Microsoft/Windows/Start Menu/Programs/JoyKeyboard.lnk"
@@ -69,7 +69,7 @@ def probe():
                        check=True, env=environment, timeout=60, creationflags=subprocess.CREATE_NO_WINDOW)
         data_file = directory / "profile/JoyKeyboard/settings.json"
         data_file.parent.mkdir(parents=True, exist_ok=True)
-        data_file.write_text('{"theme":"dark"}', encoding="utf-8")
+        data_file.write_text('{"theme":"glass"}', encoding="utf-8")
         process = subprocess.Popen([str(executable)], env=environment, creationflags=subprocess.CREATE_NO_WINDOW)
         try:
             time.sleep(3)
@@ -94,7 +94,7 @@ def probe():
             assert ctypes.windll.psapi.GetProcessMemoryInfo(handle, ctypes.byref(memory), memory.cb)
             kernel.CloseHandle.argtypes = [ctypes.c_void_p]
             kernel.CloseHandle(handle)
-            results["installed_idle"] = dict(theme="dark", seconds=round(seconds, 2), one_core_percent=round(cpu / seconds * 100, 3),
+            results["installed_idle"] = dict(theme="glass", seconds=round(seconds, 2), one_core_percent=round(cpu / seconds * 100, 3),
                                              working_set_mib=round(memory.ws / 2**20, 2), private_mib=round(memory.private / 2**20, 2))
             assert close_owned_window(executable)
             assert process.wait(timeout=30) == 0

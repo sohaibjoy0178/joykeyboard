@@ -18,7 +18,7 @@ def qt_app():
 @pytest.fixture
 def window(qt_app, monkeypatch):
     from core import DEFAULT_RULES, DEFAULTS
-    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "rules": dict(DEFAULT_RULES)}, ""))
+    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "light", "rules": dict(DEFAULT_RULES)}, ""))
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
     monkeypatch.setattr("app.key_down", lambda key: False)
     class FakePauseMonitor:
@@ -193,7 +193,7 @@ def test_glass_shell_is_opaque_readable_and_keeps_clear_corners(window, qt_app):
     assert frame.pixelColor(0, 0).alpha() < 30
 
 
-def test_dark_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_app, monkeypatch, tmp_path):
+def test_clear_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_app, monkeypatch, tmp_path):
     from core import load_settings
     from theme import style_sheet
     window.show_compact()
@@ -206,17 +206,17 @@ def test_dark_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_ap
     # Actual saves, but no hook, microphone, hotkey or autostart registration.
     window.compact.main_menu()
     menu = next(a.menu() for a in window.compact._menu.actions() if a.text() == "Theme")
-    menu.actions()[1].trigger()
+    menu.actions()[0].trigger()
     window.compact._menu.close()
     qt_app.processEvents()
-    assert window.theme_choice.currentData() == "dark"
-    assert load_settings(window.settings_path)[0]["theme"] == "dark"
-    assert window.styleSheet() == style_sheet("workspace", "dark")
-    assert window.tools.styleSheet() == style_sheet("tools", "dark")
-    assert window.compact.styleSheet() == style_sheet("bar", "dark")
-    assert window.tray.contextMenu().styleSheet() == style_sheet("bar", "dark")
+    assert window.theme_choice.currentData() == "glass"
+    assert load_settings(window.settings_path)[0]["theme"] == "glass"
+    assert window.styleSheet() == style_sheet("workspace", "glass")
+    assert window.tools.styleSheet() == style_sheet("tools", "glass")
+    assert window.compact.styleSheet() == style_sheet("bar", "glass")
+    assert window.tray.contextMenu().styleSheet() == style_sheet("bar", "glass")
     assert window.state.property("error") is True
-    assert window.state.palette().windowText().color().name() == "#ffabb8"
+    assert window.state.palette().windowText().color().name() == "#ae2638"
     assert window.transcript.toPlainText() == "আমি বাংলায় লিখি। Draft stays here."
     assert abs(window.compact.windowOpacity() - .8) < .01
     assert window.settings["voice_shortcut"] == "Ctrl+Alt+Space"
@@ -226,26 +226,53 @@ def test_dark_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_ap
     frame = shell.grab().toImage()
     scale = frame.devicePixelRatio()
     center = frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale))
-    assert center.alpha() == 255 and max(center.red(), center.green(), center.blue()) < 80
+    assert 60 < center.alpha() < 230 and min(center.red(), center.green(), center.blue()) > 200
     assert frame.pixelColor(0, 0).alpha() < 30
     assert shell.graphicsEffect() is None
-    window.theme_choice.setCurrentIndex(0)
-    assert not shell.dark and load_settings(window.settings_path)[0]["theme"] == "light"
+    window.theme_choice.setCurrentIndex(1)
+    assert not shell.glass and load_settings(window.settings_path)[0]["theme"] == "light"
     assert window.state.palette().windowText().color().name() == "#ae2638"
     window.smoke = True
 
 
-def test_saved_dark_theme_applies_at_launch(qt_app, monkeypatch):
+def test_saved_clear_theme_applies_at_launch(qt_app, monkeypatch):
     from core import DEFAULT_RULES, DEFAULTS
-    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "dark", "rules": dict(DEFAULT_RULES)}, ""))
+    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "glass", "rules": dict(DEFAULT_RULES)}, ""))
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
     view = JoyWindow(smoke=True)
     try:
-        assert view.theme_choice.currentData() == "dark"
-        assert view.compact.shell.dark
-        assert "#15191F" in view.tools.styleSheet()
+        assert view.theme_choice.currentData() == "glass"
+        assert view.compact.shell.glass
+        assert "rgba(255,255,255,155)" in view.tools.styleSheet()
     finally:
         view.close()
+
+
+def test_clear_glass_fallback_and_frameless_workspace_controls(window, qt_app, monkeypatch):
+    from types import SimpleNamespace
+
+    from app import WindowTitle
+    monkeypatch.setattr("app.set_glass_blur", lambda *_: False)
+    monkeypatch.setattr("floating_bar.set_glass_blur", lambda *_: False)
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData("glass"))
+    window.show_studio()
+    qt_app.processEvents()
+    assert not window.native_glass and window.compact.shell.fallback
+    shell = window.compact.shell
+    frame = shell.grab().toImage()
+    scale = frame.devicePixelRatio()
+    assert frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale)).alpha() >= 210
+    assert window.windowFlags() & Qt.WindowType.FramelessWindowHint
+    title = window.findChild(WindowTitle)
+    double_click = SimpleNamespace(button=lambda: Qt.MouseButton.LeftButton)
+    title.mouseDoubleClickEvent(double_click)
+    assert window.isMaximized()
+    title.mouseDoubleClickEvent(double_click)
+    assert not window.isMaximized()
+    window.resize(950, 740)
+    qt_app.processEvents()
+    assert window.size().width() == 950
+    assert not window.mask().contains(QPoint(0, 0))
 
 
 def test_idle_sync_does_not_relayout_and_record_controls_fit(window, qt_app, monkeypatch):

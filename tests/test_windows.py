@@ -47,3 +47,28 @@ def test_partial_send_is_reported(monkeypatch):
     monkeypatch.setattr(windows.user32, "SendInput", lambda *_: 0)
     with pytest.raises(RuntimeError, match="Windows blocked"):
         insert_text(target, "hello")
+
+
+@pytest.mark.parametrize("enabled,state", [(True, 3), (False, 0)])
+def test_glass_blur_native_arguments_keep_64_bit_handle(monkeypatch, enabled, state):
+    def function(hwnd, pointer):
+        assert hwnd == 2**40 + 7
+        attribute = ctypes.cast(pointer, ctypes.POINTER(windows.CompositionAttribute)).contents
+        assert attribute.kind == 19 and attribute.size == ctypes.sizeof(windows.AccentPolicy)
+        policy = ctypes.cast(attribute.data, ctypes.POINTER(windows.AccentPolicy)).contents
+        assert policy.state == state and policy.color == 0
+        return 1
+    monkeypatch.setattr(windows.user32, "SetWindowCompositionAttribute", function)
+    assert windows.set_glass_blur(2**40 + 7, enabled)
+
+
+def test_glass_blur_unavailable_or_rejected_uses_fallback(monkeypatch):
+    from types import SimpleNamespace
+    monkeypatch.setattr(windows, "user32", SimpleNamespace())
+    assert not windows.set_glass_blur(1, True)
+    monkeypatch.setattr(windows.user32, "SetWindowCompositionAttribute", lambda *_: 0, raising=False)
+    assert not windows.set_glass_blur(1, True)
+    def denied(*_):
+        raise OSError("Composition unavailable")
+    monkeypatch.setattr(windows.user32, "SetWindowCompositionAttribute", denied)
+    assert not windows.set_glass_blur(1, True)
