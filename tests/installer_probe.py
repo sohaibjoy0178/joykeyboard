@@ -34,7 +34,7 @@ def probe():
             raise RuntimeError("Existing JoyKeyboard installation found; do not overwrite its uninstall record.")
     except FileNotFoundError:
         pass
-    setup = ROOT / "dist" / "0.4.10" / "JoyKeyboard-Setup.exe"
+    setup = ROOT / "dist" / "0.4.11" / "JoyKeyboard-Setup.exe"
     directory = Path(tempfile.mkdtemp(prefix="joykeyboard-install-check-"))
     installed = directory / "App With Spaces"
     shortcut = Path(os.environ["APPDATA"]) / "Microsoft/Windows/Start Menu/Programs/JoyKeyboard.lnk"

@@ -25,6 +25,7 @@ def test_web_flac_encoder_owns_windows_handles_and_roundtrips():
         assert run.call_args.kwargs["stderr"] == voice.subprocess.PIPE
         assert run.call_args.kwargs["input"].startswith(b"RIFF")
         assert run.call_args.kwargs["timeout"] == 30
+        assert "--fast" in run.call_args.args[0]
 
 
 def test_loopback_downmix_and_stop(monkeypatch):
@@ -120,6 +121,23 @@ def test_resumed_speech_resets_pause_and_rolling_tail_uses_absolute_time():
         assert monitor.reason == "pause" and monitor._last_end == 18
 
 
+def test_pause_finishes_at_1_2_seconds_but_keeps_short_hesitation():
+    state = {"duration": 1.0}
+    recorder = SimpleNamespace(tail=lambda: (
+        PCM + b"\0\0" * int(16000 * (state["duration"] - 1)),
+        16000, int(16000 * state["duration"]),
+    ))
+    monitor = voice.PauseMonitor(recorder)
+    with patch("faster_whisper.vad.get_speech_timestamps", return_value=[{"start": 0, "end": 16000}]):
+        for duration in (1.0, 2.0, 2.19):
+            state["duration"] = duration
+            monitor.check()
+            assert monitor.reason is None
+        state["duration"] = 2.21
+        monitor.check()
+        assert monitor.reason == "pause"
+
+
 def test_no_speech_timeout_and_stopped_monitor_does_not_deliver():
     recorder = SimpleNamespace(tail=lambda: (b"\0\0" * 160000, 16000, 160000))
     monitor = voice.PauseMonitor(recorder)
@@ -195,6 +213,22 @@ def test_google_uses_https_timeout_and_no_user_key(tmp_path):
     assert client.recognize_google.call_args.kwargs == {
         "language": "bn-BD", "endpoint": "https://www.google.com/speech-api/v2/recognize"
     }
+
+
+@pytest.mark.parametrize("rate", [8000, 16000, 44100, 48000, 192000])
+def test_google_upload_is_speech_rate_with_matching_header_and_lossless_flac(tmp_path, rate):
+    from faster_whisper.audio import decode_audio
+    from speech_recognition.recognizers.google import RequestBuilder
+    original = np.full(rate, 4096, dtype=np.int16).tobytes()
+    with patch.object(voice.sr.Recognizer, "recognize_google", return_value="text") as recognize:
+        voice.Recognizer(tmp_path).transcribe(original, rate, "en-US", "google")
+    audio = recognize.call_args.args[0]
+    assert audio.sample_rate == min(rate, 16000)
+    assert len(audio.frame_data) // 2 == audio.sample_rate
+    builder = RequestBuilder(endpoint="", key="", language="en-US", filter_level=0)
+    assert builder.build_headers(audio) == {"Content-Type": f"audio/x-flac; rate={audio.sample_rate}"}
+    decoded = decode_audio(io.BytesIO(audio.get_flac_data()), sampling_rate=audio.sample_rate)
+    assert len(decoded) == audio.sample_rate and np.allclose(decoded, 0.125)
 
 
 @pytest.mark.parametrize("error", [voice.sr.RequestError("network"), voice.sr.UnknownValueError()])

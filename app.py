@@ -427,7 +427,7 @@ class JoyWindow(QMainWindow):
         self.hold = QCheckBox("Hold Right Ctrl to record; release to transcribe")
         self.hold.setChecked(self.settings["hold_key"])
         layout.addWidget(self.hold)
-        self.auto_pause = QCheckBox("Finish automatically after a speech pause (1.5 seconds)")
+        self.auto_pause = QCheckBox(f"Finish automatically after a speech pause ({PauseMonitor.PAUSE_SECONDS:g} seconds)")
         self.auto_pause.setChecked(self.settings["auto_pause"])
         self.auto_pause.setToolTip("Detects speech locally, then finishes and transcribes after a pause. Stops listening after each phrase. Disable for long thinking pauses; holding Right Ctrl still waits for release.")
         layout.addWidget(self.auto_pause)
@@ -448,7 +448,7 @@ class JoyWindow(QMainWindow):
         layout.setContentsMargins(4, 24, 4, 0)
         help_text = label("""<h2>Speak freely. Keep control.</h2>
 <p><b>Custom global shortcut:</b> Preferences → Voice shortcut lets you press your chosen keys, then Apply. Default is Ctrl+Alt+Space. Press once to start recording, again to finish and transcribe, even with the bar hidden. Conflicting shortcuts keep your previous working choice. Reset default restores Ctrl+Alt+Space. Automatic speech-pause finishing can be disabled for manual shortcut control. JoyKeyboard must stay running; protected Windows desktops cannot receive the shortcut.</p>
-<p><b>Start:</b> choose Bengali or English, select your microphone, focus a document and press <b>Ctrl + Alt + Space</b>. Speech pauses of about 1.5 seconds finish and transcribe automatically by default. Recording then stops; start again for the next phrase. Manual Finish or the shortcut also works. Ten seconds without speech discards an empty recording; the maximum is 60 seconds. Disable automatic finishing in Preferences or the bar menu for longer pauses.</p>
+<p><b>Start:</b> choose Bengali or English, select your microphone, focus a document and press <b>Ctrl + Alt + Space</b>. Speech pauses of about 1.2 seconds finish and transcribe automatically by default. Recording then stops; start again for the next phrase. Manual Finish or the shortcut also works. Ten seconds without speech discards an empty recording; the maximum is 60 seconds. Disable automatic finishing in Preferences or the bar menu for longer pauses.</p>
 <p><b>Free online:</b> Google web mode needs internet and no user API key. Audio goes to Google. Its shared testing access can be limited or revoked; availability is not guaranteed.</p>
 <p><b>Free offline:</b> download Tiny, Base or Small once in Preferences, then choose Whisper in Voice studio. No internet needed after download, no API key or per-minute service fee. Online voice works immediately with internet. Accuracy and speed depend on model and PC.</p>
 <p><b>Keyboard:</b> F12 toggles system-wide typing. Choose phonetic, English or a fixed layout under Keyboard &amp; tools. A floating preview shows composition; Space/Enter commits the word, F1–F8 chooses a suggestion. Keyboard mode starts off each launch. Custom/browser secure fields may not be detected; turn keyboard mode off before passwords.</p>
@@ -856,7 +856,7 @@ class JoyWindow(QMainWindow):
         if self.auto_pause.isChecked():
             self.pause_monitor = PauseMonitor(self.recorder)
             self.pause_monitor.start()
-        self.set_status("Listening…", f"Pause for about 1.5 seconds to finish automatically, or press {self.settings['voice_shortcut']} again to stop and transcribe." if self.auto_pause.isChecked() else f"Press {self.settings['voice_shortcut']} again to stop and transcribe. Cancel discards recording.")
+        self.set_status("Listening…", f"Pause for about {PauseMonitor.PAUSE_SECONDS:g} seconds to finish automatically, or press {self.settings['voice_shortcut']} again to stop and transcribe." if self.auto_pause.isChecked() else f"Press {self.settings['voice_shortcut']} again to stop and transcribe. Cancel discards recording.")
 
     def stop_pause_monitor(self):
         monitor, self.pause_monitor = self.pause_monitor, None
@@ -908,7 +908,7 @@ class JoyWindow(QMainWindow):
         cursor.insertText(("\n\n" if self.transcript.toPlainText() else "") + text)
         self.set_status("Words, delivered", "Transcript ready. Edit, copy or save whenever you like.")
         if self.auto_type.isChecked() and self.target:
-            QTimer.singleShot(160, lambda: self.deliver(token, self.encode_output(text) + " "))
+            QTimer.singleShot(0, lambda: self.deliver(token, self.encode_output(text) + " "))
 
     def deliver(self, token, text, attempts=0):
         if token != self.generation or self.cancel_event.is_set():

@@ -27,7 +27,7 @@ class WebAudio(sr.AudioData):
     def get_flac_data(self, convert_rate=None, convert_width=None):
         # Windowed Windows apps can have invalid inherited stderr handles; own all three pipes.
         result = subprocess.run(
-            [sr.get_flac_converter(), "--stdout", "--totally-silent", "--best", "-"],
+            [sr.get_flac_converter(), "--stdout", "--totally-silent", "--fast", "-"],
             input=self.get_wav_data(convert_rate, convert_width),
             stdout=subprocess.PIPE, stderr=subprocess.PIPE, check=True, timeout=30,
             creationflags=subprocess.CREATE_NO_WINDOW if sys.platform == "win32" else 0,
@@ -248,7 +248,7 @@ class LoopbackRecorder(Recorder):
 
 class PauseMonitor(threading.Thread):
     """Local speech detection off the audio/UI threads; never transcribes or uploads."""
-    PAUSE_SECONDS = 1.5
+    PAUSE_SECONDS = 1.2
     NO_SPEECH_SECONDS = 10
 
     def __init__(self, recorder):
@@ -273,7 +273,7 @@ class PauseMonitor(threading.Thread):
         raw = sr.AudioData(pcm, rate, 2).get_raw_data(convert_rate=16000, convert_width=2)
         samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768
         chunks = get_speech_timestamps(samples, VadOptions(
-            # Resolve chunk ends promptly; the 1.5-second pause timer is applied below.
+            # Resolve chunk ends promptly; the phrase pause timer is applied below.
             min_speech_duration_ms=120, min_silence_duration_ms=100, speech_pad_ms=0,
         ))
         if self._stop_event.is_set():
@@ -400,9 +400,13 @@ class Recognizer:
             if engine == "google":
                 recognizer = sr.Recognizer()
                 recognizer.operation_timeout = 30
+                # Downsample before building the request so FLAC and its rate header agree.
+                rate = min(sample_rate, 16000)
+                audio = WebAudio(pcm, sample_rate, 2)
+                audio = WebAudio(audio.get_raw_data(convert_rate=rate, convert_width=2), rate, 2)
                 # Experimental service's built-in generic key, never an extracted app credential.
                 text = recognizer.recognize_google(
-                    WebAudio(pcm, sample_rate, 2), language=language,
+                    audio, language=language,
                     endpoint="https://www.google.com/speech-api/v2/recognize",
                 )
             else:

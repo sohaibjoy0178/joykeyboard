@@ -22,6 +22,7 @@ def window(qt_app, monkeypatch):
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
     monkeypatch.setattr("app.key_down", lambda key: False)
     class FakePauseMonitor:
+        PAUSE_SECONDS = 1.2
         reason = None
         error = None
         stopped = False
@@ -487,6 +488,25 @@ def test_cancel_event_blocks_same_generation_delivery(window, monkeypatch):
     window.cancel_event.set()
     window.deliver(window.generation, "stale result")
     assert not calls
+
+
+def test_recognized_text_is_scheduled_immediately_and_waits_for_modifiers(window, monkeypatch):
+    scheduled, typed = [], []
+    monkeypatch.setattr("app.QTimer.singleShot", lambda delay, action: scheduled.append((delay, action)))
+    monkeypatch.setattr("app.insert_text", lambda *args: typed.append(args))
+    window.auto_type.setChecked(True)
+    window.target = Target(123, 456, 789, "Test document")
+    window.receive_text(window.generation, "বাংলা লেখা")
+    delay, ready = scheduled.pop()
+    assert delay == 0
+    monkeypatch.setattr("app.key_down", lambda key: key == 0x11)
+    ready()
+    assert not typed
+    delay, released = scheduled.pop()
+    assert delay == 100
+    monkeypatch.setattr("app.key_down", lambda key: False)
+    released()
+    assert typed == [(window.target, "বাংলা লেখা ")]
 
 
 def test_destination_failure_keeps_transcript(window, monkeypatch):
