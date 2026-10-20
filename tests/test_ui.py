@@ -110,6 +110,7 @@ def test_custom_voice_shortcut_updates_hints_and_default_reset(window):
     assert "Ctrl+Alt+V" in window.tray.toolTip()
     window.reset_voice_shortcut()
     assert window.settings["voice_shortcut"] == "Ctrl+Alt+Space"
+    assert "Ctrl+Alt+Space" in window.compact.record.toolTip()
 
 
 def test_shortcut_editor_records_chord_and_apply_button_saves_it(window, qt_app):
@@ -122,6 +123,33 @@ def test_shortcut_editor_records_chord_and_apply_button_saves_it(window, qt_app)
     QTest.mouseClick(window.shortcut_apply, Qt.MouseButton.LeftButton)
     assert window.settings["voice_shortcut"] == "Ctrl+Alt+V"
     assert window.recorder is None
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_voice_shortcut_hover_keeps_bar_compact_and_follows_custom_keys(window, qt_app, theme):
+    from PySide6.QtCore import QEvent
+    from PySide6.QtGui import QHelpEvent, QKeySequence
+    from PySide6.QtWidgets import QToolTip
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData(theme))
+    window.show_compact()
+    qt_app.processEvents()
+    bar = window.compact
+    assert bar.width() == 384 and bar.height() == 48
+    assert bar.record.text() == "Speak" and not window.isVisible()
+    assert bar.testAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
+    window.shortcut_edit.setKeySequence(QKeySequence("Ctrl+Alt+Shift+PgDown"))
+    window.apply_voice_shortcut()
+    point = bar.record.rect().center()
+    event = QHelpEvent(QEvent.Type.ToolTip, point, bar.record.mapToGlobal(point))
+    QApplication.sendEvent(bar.record, event)
+    QTest.qWait(200)
+    try:
+        assert QToolTip.isVisible()
+        assert "Shortcut: Ctrl+Alt+Shift+PgDown" in QToolTip.text()
+        assert "again to stop and transcribe" in QToolTip.text()
+        assert bar.width() == 384 and bar.height() == 48 and window.recorder is None
+    finally:
+        QToolTip.hideText()
 
 
 def test_voice_shortcut_conflict_and_save_error_leave_old_choice(window, monkeypatch):
@@ -491,7 +519,8 @@ def test_bar_record_cancel_use_existing_voice_session(window, qt_app, monkeypatc
     bar = window.compact
     QTest.mouseClick(bar.record, Qt.MouseButton.LeftButton)
     assert window.recorder is not None and window.target.pid == 456
-    assert bar.record.text() == "Finish" and bar.cancel.isVisible()
+    assert bar.record.text() == "Stop" and bar.cancel.isVisible()
+    assert bar.record.toolTip().startswith("Stop and transcribe\nShortcut: Ctrl+Alt+Space")
     assert not bar.mode.isEnabled() and not bar.keyboard_btn.isEnabled()
     recorder = window.recorder
     QTest.mouseClick(bar.cancel, Qt.MouseButton.LeftButton)

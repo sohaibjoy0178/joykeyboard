@@ -1,4 +1,25 @@
-# JoyKeyboard 0.4.8 verification
+# JoyKeyboard 0.4.9 verification
+
+Delivered `dist/0.4.9/JoyKeyboard-Setup.exe`, **94,988,171 bytes** (95.0 MB). SHA-256: `2cf3709ecd38b2075f5272fa6e33323cf994bcc0d7794ea119198a5bdb33cd5f`. Installer/checksum: [v0.4.9](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.9). Private repository access required.
+
+## Hover shortcut instructions on the compact bar
+
+Hover Speak/Stop to see the saved voice shortcut, press-once/start-again/stop instructions and where to customize keys. The bar remains **384×48** with the same rounded transparent Light/Dark surfaces. Shortcut text occupies only the tooltip. Recording action reads **Stop**; listening details also show the configured shortcut. The top-level bar enables Qt's `WA_AlwaysShowToolTips`, allowing tips while another app keeps typing focus. No new dependency or background timer. Optional offline downloads and compact packaging retained.
+
+## Executed checks
+
+- **200 pytest tests passed**, `artifacts/tests-0.4.9.log`. New Light/Dark cases dispatch a tooltip event and verify the actual visible tooltip includes a saved custom chord and stop instructions, without recording or changing 384×48 geometry. Checks also cover default reset, recording Stop tooltip, keyboard, voice, conflicts, settings and transparency. Two upstream Python 3.12 deprecation warnings remain.
+- Actual Windows pointer hover over the inactive bar displayed the shortcut while an owned external editor retained focus. Native keyboard/voice clicks also preserved focus and fixture Bengali text reached that editor (`tests/floating_native_probe.py`, `artifacts/floating-native-result.json`). Probe uses a disposable profile and restores pointer position; no physical mouse or live microphone used. Inspected the actual tip capture (`artifacts/voice-hover-tip.png`).
+- Rendered Light/Dark bar previews match the prior compact bar images; no permanent key badge or width change. All tool/menu preview captures executed from disposable data.
+- Final clean PyInstaller/Inno builds succeeded. Twelve embedded modules plus main matched final source; required assets present; Whisper weights and PocketSphinx data remain excluded (`artifacts/package-code-check.json`).
+- Fresh-folder packaged app with empty profile and System32-only PATH passed default Light/saved Dark alpha checks, Google Bengali and automatic-pause Bengali without offline weights, explicit Tiny download through the shared source preparation path, packaged offline English with Hub network access disabled, normal hook startup and graceful close (`artifacts/standalone-check.json`). Frozen Preferences download button was not separately automated. Upstream Hub symlink deprecation/rate-limit advice did not prevent download.
+- Actual temporary install/reinstall/uninstall passed: default-checked autostart, quoted Run command, developer/Facebook metadata, disabling autostart, normal startup/graceful quit, startup removal and preserved user data. Original startup/shortcut state restored; user's running copy untouched (`artifacts/installer-check.json`).
+- Installed Dark idle ten-second sample: **129.61 MiB working set**, **74.46 MiB private memory**, **0.000% of one CPU core** at counter resolution. App-process-only sample excluding compositor/GPU; does not establish zero CPU use or a low-end ceiling.
+- Ruff, pip dependency validation and Git whitespace checks passed. Installer checksum included with release.
+
+Installer unsigned. Other PCs/Windows 10 hardware, physical input and live microphone quality not checked. Global shortcut requires the app running; existing online availability, offline accuracy and sixty-second recording limits remain.
+
+# Historical 0.4.8 verification
 
 Delivered compact `dist/0.4.8/JoyKeyboard-Setup.exe`, **94,973,054 bytes** (95.0 MB / 90.6 MiB), down from **322,302,837 bytes**: **70.5% smaller**. SHA-256: `3dd14f013d19b46addad2a246363aad687a9f7af93b7a7f49e1b080af1544b61`. Installer/checksum: [v0.4.8](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.8). Private repository access required.
 

@@ -1,8 +1,10 @@
 """Click only our floating bar; verify a separate owned editor keeps focus and receives text."""
 import ctypes
 import json
+import os
 import subprocess
 import sys
+import tempfile
 import time
 from ctypes import wintypes as w
 from pathlib import Path
@@ -13,11 +15,12 @@ sys.path.insert(0, str(ROOT))
 
 def probe():
     from PySide6.QtTest import QTest
-    from PySide6.QtWidgets import QApplication
+    from PySide6.QtWidgets import QApplication, QToolTip
 
     import app
     from windows import Input, InputUnion, MouseInput, foreground_target, user32
 
+    os.environ["LOCALAPPDATA"] = tempfile.mkdtemp(prefix="joy-floating-hover-")
     application = QApplication([])
     application.setStyle("Fusion")
     view = app.JoyWindow(smoke=True)
@@ -82,9 +85,27 @@ def probe():
             QTest.qWait(20)
         assert target and target.pid == owned_pid, "Owned editor did not receive focus"
         view.last_external = target
+        view.compact.move(140, 140)
+        view.compact._placed = True
         view.show_compact()
         QTest.qWait(80)
         assert foreground_target().hwnd == target.hwnd, "Showing floating bar took focus"
+        rectangle = w.RECT()
+        user32.GetWindowRect(int(view.compact.winId()), ctypes.byref(rectangle))
+        point = view.compact.record.mapTo(view.compact, view.compact.record.rect().center())
+        scale = (rectangle.right - rectangle.left) / view.compact.width()
+        user32.SetCursorPos(rectangle.left + round(point.x() * scale), rectangle.top + round(point.y() * scale))
+        QTest.qWait(50)
+        user32.SetCursorPos(rectangle.left + round(point.x() * scale) + 2, rectangle.top + round(point.y() * scale))
+        QTest.qWait(1200)
+        assert QToolTip.isVisible() and "Shortcut: Ctrl+Alt+Space" in QToolTip.text(), (
+            view.compact.record.underMouse(), view.compact.record.isEnabled(),
+            view.compact.record.toolTip(), view.compact.isActiveWindow(), QToolTip.text())
+        assert foreground_target().hwnd == target.hwnd, "Hover tooltip took focus"
+        for widget in application.topLevelWidgets():
+            if widget.isVisible() and widget.metaObject().className() == "QTipLabel":
+                assert widget.grab().save(str(ROOT / "artifacts/voice-hover-tip.png"))
+        QToolTip.hideText()
         def click(widget):
             rectangle = w.RECT()
             user32.GetWindowRect(int(view.compact.winId()), ctypes.byref(rectangle))
@@ -109,7 +130,7 @@ def probe():
         assert result["actual"] == "আমি বাংলায় লিখি ", result
         report = {"passed": True, "theme": view.settings["theme"], "show_preserves_focus": True, "native_keyboard_click_preserves_focus": True,
                   "native_record_click_preserves_focus": True, "voice_result_inserted_into_owned_editor": True,
-                  "studio_stayed_hidden": True, "actual": result["actual"],
+                  "studio_stayed_hidden": True, "hover_shortcut_visible_without_focus": True, "actual": result["actual"],
                   "speech_backend": "fixture stub, no microphone captured", "physical_mouse_tested": False}
         (ROOT / "artifacts" / "floating-native-result.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
         print(json.dumps(report, ensure_ascii=False))

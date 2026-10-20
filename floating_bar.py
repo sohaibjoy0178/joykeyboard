@@ -115,6 +115,7 @@ class CompactBar(QWidget):
         self.setWindowIcon(owner.windowIcon())
         self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setAttribute(Qt.WidgetAttribute.WA_ShowWithoutActivating)
+        self.setAttribute(Qt.WidgetAttribute.WA_AlwaysShowToolTips)
         self.setStyleSheet(style_sheet("bar", owner.settings["theme"]))
         self.setFixedWidth(BAR_WIDTH)
         outer = QVBoxLayout(self)
@@ -289,10 +290,10 @@ class CompactBar(QWidget):
         _flag(self.record, "recording", recording)
         self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic",
                                       ("#FFBCC8" if dark else "#982638") if recording else ("#94A5BD" if dark else "#607591") if busy else "#FFFFFF"))
-        self.record.setText("Finish" if recording else "Working" if busy else "Speak")
+        self.record.setText("Stop" if recording else "Working" if busy else "Speak")
         self.record.setEnabled(owner.record_btn.isEnabled())
-        self.record.setAccessibleName(f"{'Finish and transcribe' if recording else 'Start voice typing'} · {owner.settings['voice_shortcut']}")
-        self.record.setToolTip(self.record.accessibleName())
+        self.record.setAccessibleName(f"{'Stop and transcribe' if recording else 'Start voice typing'} · {owner.settings['voice_shortcut']}")
+        self.record.setToolTip(f"{'Stop and transcribe' if recording else 'Start voice typing'}\nShortcut: {owner.settings['voice_shortcut']}\nPress once to start, again to stop and transcribe.\nChange keys: menu → Voice shortcut.")
         self.cancel.setVisible(owner.cancel_btn.isEnabled())
         self.cancel.setEnabled(owner.cancel_btn.isEnabled())
         self.hide_btn.setEnabled(owner.tray.isVisible() and QSystemTrayIcon.isSystemTrayAvailable() and not recording and not busy)
@@ -378,7 +379,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.8", lambda: None, enabled=False)
+        self._action(menu, "JoyKeyboard  0.4.9", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):

@@ -1,4 +1,4 @@
-# JoyKeyboard 0.4.8
+# JoyKeyboard 0.4.9
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
@@ -12,7 +12,7 @@ Windows Bengali/English keyboard and voice studio. Independently built; no NMS K
 
 ## Install with one EXE
 
-Open **dist/0.4.8/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition, choose Tiny/Base/Small and click **Download offline model** once; then use Whisper without internet. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
+Open **dist/0.4.9/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition, choose Tiny/Base/Small and click **Download offline model** once; then use Whisper without internet. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
 
 Installer's **Select Additional Tasks** page offers **Start JoyKeyboard when I sign in to Windows**, checked by default, plus an optional desktop shortcut. Change startup any time under **Preferences → Appearance & startup**. Both use the same HKCU Run entry. Startup displays the idle floating bar; it never starts recording automatically. Windows Startup Apps policies can override startup. App uses one instance per user.
 
@@ -20,7 +20,7 @@ Target: **Windows 10 1809+ / Windows 11, Intel/AMD x64**. ARM, 32-bit Windows, W
 
 ## Floating bar
 
-The app opens as a **384 × 48 logical-pixel floating bar**, always on top. Drag the dotted grip to move it; its position is remembered and recovered onto a connected screen. Click the language/layout selector to choose Bangla/English speech and a keyboard layout. The keyboard icon toggles typing; **Speak / Finish** controls recording. Cancel, timer and level appear while recording; clickable word suggestions appear while composing.
+The app opens as a **384 × 48 logical-pixel floating bar**, always on top. Drag the dotted grip to move it; its position is remembered and recovered onto a connected screen. Click the language/layout selector to choose Bangla/English speech and a keyboard layout. The keyboard icon toggles typing; **Speak / Stop** controls recording. **Hover Speak or Stop to see your voice shortcut** and start/stop instructions. Press those keys once to start, again to stop and transcribe; change them under **menu → Voice shortcut**. The shortcut stays in the hover tip so the bar stays compact. Cancel, timer and level appear while recording; clickable word suggestions appear while composing.
 
 The **three-dot menu** reaches every tool, speech engine, microphone/computer audio choice, Unicode/Bijoy output, automatic typing, Preferences and privacy help. Click the **Joy icon** for the full workspace. Closing the workspace returns to the bar and keeps drafts; **Quit JoyKeyboard** in the bar/tray menu exits with unsaved-draft checks. The minus button hides the idle bar to the notification area; click the tray icon to restore it. Errors/transcript feedback appear in an expandable strip with Copy/Open controls.
 
@@ -104,7 +104,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipInstall
 powershell -ExecutionPolicy Bypass -File .\build-installer.ps1 -SkipInstall
 ```
 
-`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.8/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. Offline model weights are not required to build and are never bundled. `assets/models/` supplies provenance and MIT notices. SpeechRecognition data includes only its required version file and Windows FLAC encoder; unused PocketSphinx models and other-platform encoders are excluded. Only the three README preview images are bundled. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
+`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.9/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. Offline model weights are not required to build and are never bundled. `assets/models/` supplies provenance and MIT notices. SpeechRecognition data includes only its required version file and Windows FLAC encoder; unused PocketSphinx models and other-platform encoders are excluded. Only the three README preview images are bundled. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
 
 ## Licenses and replacement
 
