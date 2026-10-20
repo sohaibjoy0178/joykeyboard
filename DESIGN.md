@@ -29,7 +29,7 @@ spacing:
 # JoyKeyboard
 
 ## Overview
-Two equal modes: **Light Glass** and **Dark Glass**. Both use actual per-pixel transparency and the same Windows compositor blur. Light uses silver tint/navy text; dark uses a smoke tint/ivory text. Neither mode uses opaque outer surfaces. Switch from Preferences or the bar Theme menu; keep selection after restart. Legacy Clear Glass maps to Light Glass; existing light/dark choices remain intact.
+Two equal modes: **Light Glass** and **Dark Glass**. Both use actual per-pixel transparency. Workspace retains compositor blur; floating bar disables native accent blur because it ignores custom rounded clipping and draws a rectangular backing. Light uses silver tint/navy text; dark uses a smoke tint/ivory text. Neither mode uses opaque outer surfaces. Switch from Preferences or the bar Theme menu; keep selection after restart. Legacy Clear Glass maps to Light Glass; existing light/dark choices remain intact.
 
 ## Colors
 Light shell alpha 140–150/255; dark shell alpha at least 165/255 for legibility over bright backgrounds. Controls, tool panels and inputs use translucent overlays matching their mode. Text and icons stay fully opaque at 100% bar opacity. Both use the same reflected rims and blue voice action. Native popups retain readable matching opaque surfaces. Missing blur uses denser 210/255 tint in the chosen mode, never switches modes.
@@ -41,7 +41,7 @@ Native Windows typography ensures readable rendering without remote font depende
 Default surface: a 384 by 48 logical-pixel frameless bar, always on top, near the top center of the work area. An icon-only brand and narrow grip leave space for language/layout, keyboard, voice, menu and hide controls. Keep the idle surface to one row; feedback and eight candidates expand only when relevant. Remember position and clamp to a connected screen. Opening a workspace is explicit; closing it returns to the bar. Explicit Quit preserves drafts and worker shutdown. The bar must not take focus from the destination editor.
 
 ## Elevation & Depth
-Bar and workspace use Windows compositor blur beneath a translucent painted shell. Window regions clip blur to rounded corners. Keep bar footprint/focus behavior and 70/80/90/100% foreground opacity option. At 100% foreground remains fully opaque while both Light Glass and Dark Glass backgrounds stay translucent. Workspace uses a draggable title, double-click maximize/restore, minimize, close-to-bar and a resize grip because native frames cannot provide Qt per-pixel transparency. Native OS dialogs retain Windows styling. Windows blur is not Apple's proprietary Liquid Glass renderer; no refraction shader is claimed.
+Bar paints a rounded translucent shell with no native backdrop blur or extra background surface. Workspace keeps compositor blur. Never enable native accent blur on the bar: Windows ignores its custom rounded mask. Transparent PNG previews exclude the desktop crop. Keep bar footprint/focus behavior and 70/80/90/100% foreground opacity option. At 100% foreground remains fully opaque while both Light Glass and Dark Glass backgrounds stay translucent. Workspace uses a draggable title, double-click maximize/restore, minimize, close-to-bar and a resize grip because native frames cannot provide Qt per-pixel transparency. Native OS dialogs retain Windows styling. Windows blur is not Apple's proprietary Liquid Glass renderer; no refraction shader is claimed.
 
 ## Shapes
 Rounded controls and recording panel echo the icon. Transcript text area stays generous and simple.

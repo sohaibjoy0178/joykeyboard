@@ -193,6 +193,21 @@ def test_light_glass_shell_is_translucent_readable_and_keeps_clear_corners(windo
     assert frame.pixelColor(0, 0).alpha() < 30
 
 
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_bar_never_enables_rectangular_native_blur(window, qt_app, monkeypatch, theme):
+    calls = []
+    monkeypatch.setattr("floating_bar.set_glass_blur", lambda hwnd, enabled: calls.append(enabled) or True)
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData(theme))
+    window.compact.apply_theme()
+    window.show_compact()
+    qt_app.processEvents()
+    window.compact.set_status("Example error", error=True)
+    window.compact.hide()
+    window.compact.reveal()
+    qt_app.processEvents()
+    assert calls and not any(calls)
+
+
 @pytest.mark.parametrize("theme,index,error_color", [("light", 0, "#ae2638"), ("dark", 1, "#ffabb8")])
 def test_both_glass_themes_switch_all_surfaces_save_and_preserve_state(window, qt_app, tmp_path, theme, index, error_color):
     from core import load_settings

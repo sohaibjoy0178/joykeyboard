@@ -1,4 +1,27 @@
-# JoyKeyboard 0.4.6 verification
+# JoyKeyboard 0.4.7 verification
+
+Delivered `dist/0.4.7/JoyKeyboard-Setup.exe`, **322,302,837 bytes**. SHA-256: `64ab485cca3eeae42db4277720c0a671c323db00015f8b52a534d03f72139139`. Installer/checksum: [v0.4.7](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.7). Private repository access required.
+
+## Rounded floating bar without square backing
+
+Windows native accent blur paints a rectangle outside the floating bar's rounded per-pixel surface, despite Qt's rounded window mask. The bar now explicitly disables that effect, retaining the existing transparent painted shell, reflected edges, shape and Light Glass/Dark Glass choices. Workspace blur remains enabled. No new dependency, rendering loop or background capture is added. README bar previews are raw RGBA PNGs with transparent corners rather than rectangular desktop crops.
+
+## Executed checks
+
+- **198 pytest tests passed**, `artifacts/tests-0.4.7.log`. Two new theme cases ensure bar show, hide/reveal, feedback and theme application never enable native rectangular blur. Existing keyboard, voice, settings, transparency and geometry checks passed. Two upstream Python 3.12 deprecation warnings remain.
+- Actual Windows compositor check over an owned static striped backdrop passed all six cases: Light/Dark idle, feedback and candidates (`tests/glass_native_probe.py`, `artifacts/glass-native-check.json`). Every fully transparent pixel was compared before/after showing the bar: **maximum outside RGB difference 0** in each case, across 3,024–3,849 pixels. Shell alpha **140/255 Light**, **165/255 Dark**, with visible background variation **49.50/38.50** respectively. This verifies transparent corners and absence of the rectangular backdrop, including expanded states. Native bar blur is intentionally absent.
+- Actual Light/Dark raw bar PNGs inspected and committed under `docs/screenshots/glass-light-bar.png` and `glass-dark-bar.png`. Workspace, tools, menus and candidate captures also executed with disposable profiles. Capture backdrop exists only in test harnesses.
+- Native source keyboard/voice focus checks and custom global shortcut start/finish with hidden bar, no repeat and keyboard resume passed. Audio/recognizer use fixtures for these flow tests (`artifacts/floating-native-result.json`, `voice-shortcut-check.json`).
+- Packaged actual Windows input passed saved Dark Glass/custom voice chord, hidden-bar shortcut dispatch, fast multiword Bangla, Backspace and native password pass-through. No physical input hardware was exercised (`artifacts/packaged-keyboard-event-check.json`).
+- Final clean PyInstaller/Inno builds succeeded. All twelve embedded modules plus main matched final sources, and required assets/models were present (`artifacts/package-code-check.json`).
+- Fresh-folder packaged app with empty user cache and System32-only PATH passed Light/Dark alpha and tint checks, bundled Base offline English, Google online Bengali, automatic pause Bengali, normal hook startup and graceful close (`artifacts/standalone-check.json`). No Python installation or model downloads used.
+- Real temporary install/reinstall/uninstall passed: default-checked autostart, quoted Run command, developer/Facebook metadata, disabling startup, normal startup/graceful quit, uninstall startup removal and user-data preservation. Original startup/shortcut state restored; user's running app was not overwritten or stopped (`artifacts/installer-check.json`).
+- Installed Dark Glass ten-second idle sample: **129.72 MiB working set**, **74.39 MiB private memory**, **0.000% of one CPU core** at the counter's resolution. App-process-only sample on this Ryzen 9 Windows 11 PC; excludes compositor/GPU cost and does not establish zero CPU use or a low-end-device ceiling.
+- Ruff, pip dependency validation and Git whitespace checks passed. Installer checksum included with release.
+
+Installer unsigned. Other PCs, Windows 10 hardware, physical keyboard/mouse and live microphone quality were not checked this release. Voice engine accuracy/service availability limits remain. Workspace blur uses an optional undocumented Windows API; effects vary with Windows settings and drivers. Floating bar retains transparency without backdrop blur.
+
+# Historical 0.4.6 verification
 
 Delivered `dist/0.4.6/JoyKeyboard-Setup.exe`, **322,297,467 bytes**. SHA-256: `a11632cd99425e28be4c15b2cfaf35033c37cf012e2b28f5dfec06c1c38ae406`. Installer/checksum: [v0.4.6](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.6). Source/previews committed; private repository access required.
 

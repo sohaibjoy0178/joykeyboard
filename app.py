@@ -433,7 +433,7 @@ class JoyWindow(QMainWindow):
 <p><b>Appearance and startup:</b> Light Glass and Dark Glass both show actual desktop colors through Windows compositor blur. Choose either in Preferences or the bar menu; choice is remembered. At 100% bar opacity controls stay crisp; Both materials remain translucent. Your selected light/dark theme is saved; older Clear Glass preferences become Light Glass. Drag the title to move the workspace, double-click to maximize/restore, or resize from the lower-right grip. Preferences and the installer offer startup at Windows sign-in, without automatically recording.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.6 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.7 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)

@@ -226,7 +226,8 @@ class CompactBar(QWidget):
         self.sync_controls()
 
     def _refresh_blur(self):
-        self.shell.fallback = not set_glass_blur(int(self.winId()), True)
+        # Windows accent blur ignores this rounded mask and paints a rectangular backing.
+        self.shell.fallback = not set_glass_blur(int(self.winId()), False)
         self.shell.update()
 
     def showEvent(self, event):
@@ -377,7 +378,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.6", lambda: None, enabled=False)
+        self._action(menu, "JoyKeyboard  0.4.7", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):
