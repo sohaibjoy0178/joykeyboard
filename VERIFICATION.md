@@ -1,4 +1,27 @@
-# JoyKeyboard 0.4.5 verification
+# JoyKeyboard 0.4.6 verification
+
+Delivered `dist/0.4.6/JoyKeyboard-Setup.exe`, **322,297,467 bytes**. SHA-256: `a11632cd99425e28be4c15b2cfaf35033c37cf012e2b28f5dfec06c1c38ae406`. Installer/checksum: [v0.4.6](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.6). Source/previews committed; private repository access required.
+
+## Both Light and Dark with transparent glass
+
+Two permanent choices: **Light Glass** and **Dark Glass**, both with real per-pixel transparency, Windows compositor blur and reflective edges. Light uses silver tint/navy text; Dark uses smoke tint/ivory text. Outer material and tool/input overlays remain translucent in both modes. Foreground stays crisp at 100% bar opacity. Theme switches immediately in bar menu or Preferences and persists after restart. Saved light/dark choices remain intact; legacy Clear Glass maps to Light Glass. Bar footprint stays 384×48 logical pixels; keyboard, voice, drafts, startup and credit behavior retained.
+
+## Executed checks
+
+- **196 pytest tests passed**, `artifacts/tests-0.4.6.log`. Parameterized live switch/save/restart, native-blur fallback and actual alpha pixels for **each** theme; two menu choices required; retained transcript, shortcut, opacity and live error colors; legacy settings migration; dark/light contrast reference pairs. Existing voice/keyboard/document/native API checks passed. Two upstream Python 3.12 deprecation warnings remain.
+- Real compositor blur verified independently in both themes over an owned striped backdrop (`artifacts/glass-native-check.json`, `tests/glass_native_probe.py`). Light red-channel variation: **0.69 with blur vs 49.50 without**; Dark: **0.52 with blur vs 38.50 without**. Restoring blur restored low variation. This proves background blur in both modes rather than opaque gradients or whole-window fading.
+- Actual UI captures inspected for Light/Dark bar, Dark studio and Light/Dark Settings; both themes captured across all six writing tools, candidate words, Help and menus. Composited previews under `docs/screenshots/` use the same controlled owned test backdrop; no product wallpaper or capture loop. Dark outer labels/status use brighter text for readable glass over bright backgrounds.
+- Native source Dark Glass focus/keyboard/voice fixture insertion passed (`artifacts/floating-native-result.json`). Real custom global chord start/finish with hidden bar, no repeat and keyboard resume passed (`artifacts/voice-shortcut-check.json`). These flow checks use fixture microphone/recognizer stubs with real Windows events.
+- Actual packaged Dark Glass startup with saved custom shortcut passed hidden-bar dispatch, fast multiword Bangla input, Backspace and native password pass-through (`artifacts/packaged-keyboard-event-check.json`). Missing Small model prevents real microphone capture in packaged shortcut-dispatch test.
+- Final clean PyInstaller/Inno builds succeeded. All twelve embedded modules plus main matched final source and required models/assets were present (`artifacts/package-code-check.json`).
+- Fresh-folder packaged app, System32-only PATH/no Python environment: default Light Glass and saved Dark Glass **both** passed translucent alpha and correct tint pixel assertions. Bundled Base offline English, Google online Bengali, automatic speech-pause Bengali, normal hook startup and graceful close passed (`artifacts/standalone-check.json`). No model downloads.
+- Actual installer install/reinstall/uninstall passed: checked-by-default sign-in startup, quoted Run command, developer/Facebook metadata, removal when unchecked, normal startup/shutdown and preserved user data. Original registry/shortcut state restored (`artifacts/installer-check.json`). Existing user's app copy not terminated or overwritten.
+- Installed Dark Glass idle ten-second sample: **129.45 MiB working set**, **74.29 MiB private memory**, **0.156% of one CPU core**. App-process-only measurement on this Ryzen 9 Windows 11 PC; excludes compositor/GPU cost and is not a low-end-device ceiling. Recording/transcription costs more.
+- Ruff, pip dependency check and Git diff whitespace checks passed. No new runtime dependency or continuous repaint/capture timer.
+
+Blur uses an optional undocumented Windows composition API with denser translucent fallback in the selected theme. Effects/contrast vary with Windows settings, drivers and background. Native popups retain matching readable surfaces; OS dialogs retain Windows appearance. Apple-inspired Windows treatment, not Apple's renderer. Installer unsigned. Windows 10, other PCs/VMs, physical keyboard/mouse and live microphone quality were not verified this release. Existing offline-Bengali accuracy and online-service availability limitations remain.
+
+# Historical 0.4.5 verification
 
 Delivered `dist/0.4.5/JoyKeyboard-Setup.exe`, **320,222,354 bytes**. SHA-256: `1fbb64a2a8b74f3875134bf3b65de81b3643fe42dba2c77926dc16150f9d50d5`. Installer and checksum are release assets at [v0.4.5](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.5); source and actual UI previews are in Git. Private-repository access required.
 

@@ -42,14 +42,14 @@ def render():
         def save(widget, name):
             application.processEvents()
             assert widget.grab().save(str(destination / f"glass-{name}.png"))
-        for theme in ("glass", "light"):
+        for theme in ("light", "dark"):
             window.theme_choice.setCurrentIndex(window.theme_choice.findData(theme))
-            prefix = "clear-" if theme == "glass" else ""
+            prefix = theme + "-"
             window.show_compact()
-            if theme == "glass":
+            if theme in ("light", "dark"):
                 QTest.qWait(120)
                 point = window.compact.pos()
-                assert window.compact.screen().grabWindow(0, point.x(), point.y(), window.compact.width(), window.compact.height()).save(str(destination / "clear-bar-composited.png"))
+                assert window.compact.screen().grabWindow(0, point.x(), point.y(), window.compact.width(), window.compact.height()).save(str(destination / f"{theme}-bar-composited.png"))
             save(window.compact, prefix + "bar")
             window.compact.main_menu()
             save(window.compact._menu, prefix + "menu")
@@ -61,17 +61,17 @@ def render():
             for page, name in [(0, "studio"), (2, "settings"), (3, "help")]:
                 window.open_workspace(page)
                 save(window, prefix + name)
-                if theme == "glass" and name in ("studio", "settings"):
+                if name in ("studio", "settings"):
                     QTest.qWait(120)
                     point = window.pos()
-                    assert window.screen().grabWindow(0, point.x(), point.y(), window.width(), window.height()).save(str(destination / f"clear-{name}-composited.png"))
+                    assert window.screen().grabWindow(0, point.x(), point.y(), window.width(), window.height()).save(str(destination / f"{theme}-{name}-composited.png"))
             for index, name in enumerate(("keyboard", "words", "converter", "screen-keys", "docpad", "assistant")):
                 window.open_workspace(1, index)
                 save(window, prefix + name)
-                if theme == "glass" and name in ("studio", "settings"):
+                if name in ("studio", "settings"):
                     QTest.qWait(120)
                     point = window.pos()
-                    assert window.screen().grabWindow(0, point.x(), point.y(), window.width(), window.height()).save(str(destination / f"clear-{name}-composited.png"))
+                    assert window.screen().grabWindow(0, point.x(), point.y(), window.width(), window.height()).save(str(destination / f"{theme}-{name}-composited.png"))
         window.close()
         backdrop.close()
         application.quit()

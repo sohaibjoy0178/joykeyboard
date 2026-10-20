@@ -3,16 +3,13 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from PySide6.QtCore import QByteArray, QPoint, QRectF, QSize, Qt, QTimer
+from PySide6.QtCore import QByteArray, QPoint, QSize, Qt, QTimer
 from PySide6.QtGui import (
     QAction,
     QActionGroup,
-    QColor,
     QGuiApplication,
     QIcon,
-    QLinearGradient,
     QPainter,
-    QPen,
     QPixmap,
 )
 from PySide6.QtSvg import QSvgRenderer
@@ -96,31 +93,12 @@ class DragGrip(QLabel):
 
 
 class GlassShell(QFrame):
-    """Translucent highlights above compositor blur, or the opaque light material."""
-    glass = False
+    """The same transparent material in light and dark tints."""
+    dark = False
     fallback = False
 
     def paintEvent(self, event):
-        if self.glass:
-            paint_glass(self, 17, self.fallback)
-            return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        rect = QRectF(self.rect()).adjusted(.5, .5, -.5, -.5)
-        fill = QLinearGradient(0, 0, 0, self.height())
-        colors = ("#FFFFFF", "#FAFCFF", "#EDF3FC", "#E5EDF9", "#F1F6FE", "#D9E5F5")
-        for stop, color in zip((0, .15, .48, .52, .9, 1), colors):
-            fill.setColorAt(stop, QColor(color))
-        painter.setBrush(fill)
-        painter.setPen(QPen(QColor("#B9C9DF"), 1))
-        painter.drawRoundedRect(rect, 17, 17)
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        rim = QLinearGradient(0, 0, 0, self.height())
-        rim.setColorAt(0, QColor(255, 255, 255, 255))
-        rim.setColorAt(1, QColor(255, 255, 255, 100))
-        painter.setPen(QPen(rim, 1))
-        painter.drawRoundedRect(rect.adjusted(1, 1, -1, -1), 16, 16)
-        painter.end()
+        paint_glass(self, 17, self.fallback, self.dark)
 
 
 class CompactBar(QWidget):
@@ -232,26 +210,23 @@ class CompactBar(QWidget):
         return item
 
     def apply_theme(self):
-        glass = self.owner.settings["theme"] == "glass"
+        dark = self.owner.settings["theme"] == "dark"
         self.setStyleSheet(style_sheet("bar", self.owner.settings["theme"]))
-        self.shell.glass = glass
+        self.shell.dark = dark
         self._refresh_blur()
-        if glass:
-            round_window(self, 19)
-        else:
-            self.clearMask()
+        round_window(self, 19)
         self.shell.update()
-        color = "#20364F"
+        color = "#CFDAEC" if dark else "#20364F"
         for widget, name in ((self.more, "more"), (self.hide_btn, "hide"), (self.cancel, "close"),
                              (self.copy, "copy"), (self.open, "open"), (self.dismiss, "close")):
             widget.setIcon(line_icon(name, color))
-        self.grip.setPixmap(line_icon("grip", "#617995").pixmap(16, 22))
+        self.grip.setPixmap(line_icon("grip", "#ADB9CC" if dark else "#617995").pixmap(16, 22))
         if self._menu is not None:
             self._menu.setStyleSheet(style_sheet("bar", self.owner.settings["theme"]))
         self.sync_controls()
 
     def _refresh_blur(self):
-        self.shell.fallback = not set_glass_blur(int(self.winId()), self.owner.settings["theme"] == "glass")
+        self.shell.fallback = not set_glass_blur(int(self.winId()), True)
         self.shell.update()
 
     def showEvent(self, event):
@@ -260,8 +235,7 @@ class CompactBar(QWidget):
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        if self.owner.settings["theme"] == "glass":
-            round_window(self, 19)
+        round_window(self, 19)
 
     def reveal(self):
         if not self._placed:
@@ -306,13 +280,14 @@ class CompactBar(QWidget):
         self.mode.setToolTip(f"Voice: {owner.language.currentText()}\nKeyboard: {LAYOUTS[owner.settings['keyboard_layout']]}\nClick to change language or layout")
         self.mode.setEnabled(owner.language.isEnabled())
         _flag(self.keyboard_btn, "active", enabled)
-        self.keyboard_btn.setIcon(line_icon("keyboard", "#0962CA" if enabled else "#20364F"))
+        dark = owner.settings["theme"] == "dark"
+        self.keyboard_btn.setIcon(line_icon("keyboard", ("#A9CDFF" if enabled else "#CFDAEC") if dark else ("#0962CA" if enabled else "#20364F")))
         self.keyboard_btn.setToolTip(f"Keyboard {'ON' if enabled else 'OFF'} · F12\nType ami, then Space → আমি (phonetic)\nSpace or Enter inserts the composed word")
         self.keyboard_btn.setAccessibleName(self.keyboard_btn.toolTip())
         self.keyboard_btn.setEnabled(not recording and not busy)
         _flag(self.record, "recording", recording)
         self.record.setIcon(line_icon("stop" if recording else "more" if busy else "mic",
-                                      "#982638" if recording else "#607591" if busy else "#FFFFFF"))
+                                      ("#FFBCC8" if dark else "#982638") if recording else ("#94A5BD" if dark else "#607591") if busy else "#FFFFFF"))
         self.record.setText("Finish" if recording else "Working" if busy else "Speak")
         self.record.setEnabled(owner.record_btn.isEnabled())
         self.record.setAccessibleName(f"{'Finish and transcribe' if recording else 'Start voice typing'} · {owner.settings['voice_shortcut']}")
@@ -402,7 +377,7 @@ class CompactBar(QWidget):
     def main_menu(self):
         owner = self.owner
         menu = QMenu(self)
-        self._action(menu, "JoyKeyboard  0.4.5", lambda: None, enabled=False)
+        self._action(menu, "JoyKeyboard  0.4.6", lambda: None, enabled=False)
         self._action(menu, "Voice studio / transcript", lambda: owner.open_workspace(0))
         tools = menu.addMenu("Keyboard and writing tools")
         for index, title in enumerate(("Keyboard", "Words & snippets", "Unicode / Bijoy converter", "Screen keys", "DocPad / PDF", "Text assistant")):

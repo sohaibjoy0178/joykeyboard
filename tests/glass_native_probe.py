@@ -48,23 +48,22 @@ def probe():
         values = [frame.pixelColor(round(x * scale), y).red() for x in range(30, 350)]
         return round(statistics.pstdev(values), 2)
 
-    blur = capture("clear-native-blurred.png")
-    set_glass_blur(int(bar.winId()), False)
-    plain = capture("clear-native-no-blur.png")
-    set_glass_blur(int(bar.winId()), True)
-    restored = capture("clear-native-restored.png")
-    report = dict(
-        blur_deviation=blur,
-        no_blur_deviation=plain,
-        restored_deviation=restored,
-        native_accepted=not bar.shell.fallback,
-        theme=window.settings["theme"],
-    )
-    print(json.dumps(report))
-    (ROOT / "artifacts/glass-native-check.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+    results = {}
+    for theme in ("light", "dark"):
+        window.theme_choice.setCurrentIndex(window.theme_choice.findData(theme))
+        blur = capture(f"{theme}-native-blurred.png")
+        set_glass_blur(int(bar.winId()), False)
+        plain = capture(f"{theme}-native-no-blur.png")
+        set_glass_blur(int(bar.winId()), True)
+        restored = capture(f"{theme}-native-restored.png")
+        results[theme] = dict(blur_deviation=blur, no_blur_deviation=plain, restored_deviation=restored,
+                              native_accepted=not bar.shell.fallback,
+                              passed=plain > 15 and blur < plain * .4 and restored < plain * .4)
+    print(json.dumps(results))
+    (ROOT / "artifacts/glass-native-check.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
     window.close()
     backdrop.close()
-    assert plain > 15 and blur < plain * 0.4 and restored < plain * 0.4, report
+    assert all(value["passed"] for value in results.values()), results
 
 
 if __name__ == "__main__":

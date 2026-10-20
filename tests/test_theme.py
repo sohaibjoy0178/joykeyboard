@@ -16,6 +16,7 @@ def contrast(foreground, background):
     ("#AE2638", "#F1F6FE"), ("#095CBF", "#EDF3FC"),
     ("#172337", "#9B9B9B"), ("#172337", "#F5FAFF"),
     ("#FFFFFF", "#0C66CD"), ("#AE2638", "#F5FAFF"),
+    ("#FFF0F4", "#686B70"), ("#EDF2FA", "#686B70"), ("#FFABB8", "#292F39"), ("#FFBCC8", "#4B2531"),
 ])
 def test_primary_text_and_glass_states_have_readable_contrast(foreground, background):
     assert contrast(foreground, background) >= 4.5

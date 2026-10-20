@@ -359,8 +359,8 @@ class JoyWindow(QMainWindow):
         theme_row = QHBoxLayout()
         theme_row.addWidget(label("Theme"))
         self.theme_choice = QComboBox()
-        self.theme_choice.addItem("Clear Glass · transparent", "glass")
-        self.theme_choice.addItem("Light Glass · opaque", "light")
+        self.theme_choice.addItem("Light Glass · transparent", "light")
+        self.theme_choice.addItem("Dark Glass · transparent", "dark")
         self.theme_choice.setCurrentIndex(self.theme_choice.findData(self.settings["theme"]))
         self.theme_choice.setAccessibleName("Application theme")
         self.theme_choice.currentIndexChanged.connect(self.change_theme)
@@ -430,10 +430,10 @@ class JoyWindow(QMainWindow):
 <p><b>Compatibility:</b> Windows 10/11, 64-bit Intel/AMD. Microphone required. Automatic typing works in many standard text fields; elevated apps, secure fields and some custom editors may block it. Copy transcript when needed.</p>
 <p><b>Your data:</b> audio is not saved automatically. Local dictionary learning and word transitions are saved on quit; no cloud upload. Gemini text assistance uploads only text you explicitly submit with your own session key. Preferences and user models live in your local JoyKeyboard data folder.</p>
 <p><b>Floating bar:</b> opens on launch. Drag the grip to move it; position is remembered. The language/layout selector and menu reach voice engines, inputs, output encoding and every tool. Closing this workspace returns to the bar; use Quit in its menu to exit.</p>
-<p><b>Appearance and startup:</b> Clear Glass shows actual desktop colors through Windows compositor blur. Light Glass uses opaque surfaces. Choose either in Preferences or the bar menu; choice is remembered. At 100% bar opacity controls stay crisp; Clear Glass material remains translucent. Older Dark Glass preferences upgrade to Clear Glass. Drag the title to move the workspace, double-click to maximize/restore, or resize from the lower-right grip. Preferences and the installer offer startup at Windows sign-in, without automatically recording.</p>
+<p><b>Appearance and startup:</b> Light Glass and Dark Glass both show actual desktop colors through Windows compositor blur. Choose either in Preferences or the bar menu; choice is remembered. At 100% bar opacity controls stay crisp; Both materials remain translucent. Your selected light/dark theme is saved; older Clear Glass preferences become Light Glass. Drag the title to move the workspace, double-click to maximize/restore, or resize from the lower-right grip. Preferences and the installer offer startup at Windows sign-in, without automatically recording.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.5 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.6 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)
@@ -565,7 +565,7 @@ class JoyWindow(QMainWindow):
         self.update()
 
     def _refresh_blur(self):
-        self.native_glass = set_glass_blur(int(self.winId()), self.settings["theme"] == "glass")
+        self.native_glass = set_glass_blur(int(self.winId()), True)
         self.update()
 
     def showEvent(self, event):
@@ -573,10 +573,7 @@ class JoyWindow(QMainWindow):
         QTimer.singleShot(0, self._refresh_blur)
 
     def paintEvent(self, event):
-        if self.settings["theme"] == "glass":
-            paint_glass(self, 0 if self.isMaximized() else 24, not self.native_glass)
-        else:
-            super().paintEvent(event)
+        paint_glass(self, 0 if self.isMaximized() else 24, not self.native_glass, self.settings["theme"] == "dark")
 
     def resizeEvent(self, event):
         super().resizeEvent(event)

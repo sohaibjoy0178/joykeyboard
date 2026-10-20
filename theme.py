@@ -1,4 +1,4 @@
-"""Clear glass and opaque light surfaces shared by the bar, studio and writing tools."""
+"""Transparent light and dark glass surfaces shared by the bar, studio and writing tools."""
 
 WORKSPACE_STYLE = """
 QWidget { color:#172337; font-family:'Segoe UI','Nirmala UI'; font-size:14px; font-style:normal; font-weight:400; }
@@ -132,6 +132,72 @@ GLASS_TOOLS = """
 QLineEdit, QListWidget { background:rgba(255,255,255,155); border-color:rgba(255,255,255,190); }
 """
 
+DARK_WORKSPACE = """
+QWidget { color:#EDF2FA; }
+QLabel#title, QLabel#state { color:#EDF2FA; }
+QLabel#eyebrow, QLabel#muted { color:#EDF2FA; }
+QFrame#panel, QWidget#voiceControls { background:rgba(8,13,21,55); border-color:rgba(255,255,255,70); }
+QPushButton { color:#EDF2FA; background:qlineargradient(x1:0,y1:0,x2:0,y2:1,stop:0 rgba(255,255,255,35),stop:1 rgba(8,13,21,55)); border-color:rgba(255,255,255,85); }
+QPushButton:hover { background:rgba(59,70,86,120); border-color:#739BD1; }
+QPushButton:pressed { background:rgba(27,37,51,120); }
+QPushButton:disabled { color:#8592A5; background:rgba(35,40,50,120); border-color:#343E4D; }
+QPushButton#primary { color:#FFFFFF; border-color:#75ACF4; }
+QPushButton#primary:disabled { background:rgba(38,51,68,120); color:#94A5BD; border-color:#40536D; }
+QPushButton#cancel { color:#FFABB8; }
+QPushButton#cancel:disabled { color:#8592A5; }
+QComboBox { color:#EDF2FA; background:rgba(28,32,39,120); border-color:#4A5668; }
+QComboBox:disabled { color:#8592A5; background:rgba(35,40,50,120); }
+QComboBox QAbstractItemView { background:rgba(34,40,50,120); color:#EDF2FA; selection-background-color:#263E61; selection-color:#EDF2FA; }
+QCheckBox::indicator { background:rgba(28,32,39,120); border-color:#68798F; }
+QCheckBox::indicator:checked { background:rgba(0,104,217,120); border-color:#7DB7FF; }
+QCheckBox::indicator:disabled { background:rgba(48,56,70,120); border-color:#46546A; }
+QPlainTextEdit, QLineEdit, QKeySequenceEdit { background:rgba(21,25,31,120); color:#EDF2FA; placeholder-text-color:#ADB9CC; border-color:#4A5668; selection-background-color:#263E61; selection-color:#EDF2FA; }
+QKeySequenceEdit QLineEdit { background:transparent; }
+QProgressBar { background:rgba(53,66,86,120); }
+QTabBar { background:rgba(17,21,27,120); }
+QTabBar::tab { color:#ADB9CC; }
+QTabBar::tab:selected { background:rgba(48,59,75,120); color:#EDF2FA; border-color:#556781; }
+QTabBar::tab:hover:!selected { background:rgba(38,47,61,120); }
+QMenu { background:#202630; color:#EDF2FA; border-color:#526079; }
+QMenu::item:selected { background:#263E61; color:#EDF2FA; }
+QMenu::item:disabled { color:#8592A5; }
+QMenu::separator { background:#455166; }
+QToolTip { background:#252D38; color:#EDF2FA; border-color:#63748C; }
+QScrollBar:vertical { background:rgba(27,32,40,120); }
+QScrollBar::handle:vertical { background:rgba(87,102,125,120); }
+QLabel#state[error="true"] { color:#FFABB8; }
+"""
+
+DARK_BAR = """
+QWidget { color:#EDF2FA; }
+QToolButton:hover { background:rgba(59,70,86,120); border-color:#647790; }
+QToolButton:pressed { background:rgba(26,36,50,120); }
+QToolButton:disabled { color:#8592A5; }
+QToolButton#mode { color:#EDF2FA; }
+QToolButton#keyboard[active="true"] { background:rgba(38,62,97,120); border-color:#608BC2; }
+QToolButton#speak[recording="true"] { background:rgba(75,37,49,120); border-color:#A36176; color:#FFBCC8; }
+QToolButton#speak:disabled { background:rgba(38,51,68,120); border-color:#40536D; color:#94A5BD; }
+QToolButton#candidate { background:rgba(34,44,59,120); color:#EDF2FA; border-color:#53657D; }
+QToolButton#candidate:hover { background:rgba(45,69,102,120); border-color:#80B1F0; }
+QLabel#composition { color:#EDF2FA; }
+QLabel#status { color:#EDF2FA; }
+QLabel#status[error="true"] { color:#FFF0F4; }
+QProgressBar { background:rgba(53,66,86,120); }
+QMenu { background:#202630; color:#EDF2FA; border-color:#526079; }
+QMenu::item:selected { background:#263E61; color:#EDF2FA; }
+QMenu::item:disabled { color:#8592A5; }
+QMenu::separator { background:#455166; }
+QToolTip { background:#252D38; color:#EDF2FA; border-color:#63748C; }
+"""
+
+DARK_TOOLS = """
+QLineEdit, QListWidget { background:rgba(21,25,31,120); color:#EDF2FA; border-color:#4A5668; selection-background-color:#263E61; selection-color:#EDF2FA; }
+QListWidget::item:selected { background:rgba(38,62,97,120); color:#EDF2FA; }
+QCheckBox { color:#EDF2FA; }
+QCheckBox::indicator { background:rgba(28,32,39,120); border-color:#68798F; }
+QCheckBox::indicator:checked { background:rgba(0,104,217,120); border-color:#7DB7FF; }
+"""
+
 WORKSPACE_STYLE += '\nQLabel#state[error="true"] { color:#AE2638; }\n'
 
 
@@ -141,7 +207,7 @@ def style_sheet(surface, theme):
         "bar": (BAR_STYLE, GLASS_BAR),
         "tools": (TOOLS_STYLE, GLASS_TOOLS),
     }[surface]
-    return light + glass if theme == "glass" else light
+    return light + glass + ({"workspace": DARK_WORKSPACE, "bar": DARK_BAR, "tools": DARK_TOOLS}[surface] if theme == "dark" else "")
 
 
 def round_window(widget, radius):
@@ -152,21 +218,23 @@ def round_window(widget, radius):
     widget.setMask(QRegion(path.toFillPolygon().toPolygon()))
 
 
-def paint_glass(widget, radius, fallback=False):
+def paint_glass(widget, radius, fallback=False, dark=False):
     from PySide6.QtCore import QRectF, Qt
     from PySide6.QtGui import QColor, QLinearGradient, QPainter, QPen
     painter = QPainter(widget)
     painter.setRenderHint(QPainter.RenderHint.Antialiasing)
     bounds = QRectF(widget.rect()).adjusted(.5, .5, -.5, -.5)
     fill = QLinearGradient(0, 0, 0, widget.height())
+    tint = (18, 23, 31) if dark else (245, 250, 255)
+    minimum_alpha = 210 if fallback else 165 if dark else 140
     for stop, alpha in ((0, 150), (.18, 100), (.48, 82), (.52, 62), (.9, 92), (1, 128)):
-        fill.setColorAt(stop, QColor(245, 250, 255, max(alpha, 210 if fallback else 140)))
+        fill.setColorAt(stop, QColor(*tint, max(alpha, minimum_alpha)))
     painter.setBrush(fill)
-    painter.setPen(QPen(QColor(255, 255, 255, 225), 1))
+    painter.setPen(QPen(QColor(255, 255, 255, 100 if dark else 225), 1))
     painter.drawRoundedRect(bounds, radius, radius)
     painter.setBrush(Qt.BrushStyle.NoBrush)
     rim = QLinearGradient(0, 0, 0, widget.height())
-    rim.setColorAt(0, QColor(255, 255, 255, 200))
+    rim.setColorAt(0, QColor(255, 255, 255, 115 if dark else 200))
     rim.setColorAt(1, QColor(150, 176, 205, 65))
     painter.setPen(QPen(rim, 1))
     painter.drawRoundedRect(bounds.adjusted(1, 1, -1, -1), radius - 1, radius - 1)

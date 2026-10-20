@@ -88,7 +88,7 @@ def probe(executable=None):
         if executable:
             profile = directory / "profile/JoyKeyboard"
             profile.mkdir(parents=True)
-            settings = {"bar_position": [300, 20], "theme": "glass"}
+            settings = {"bar_position": [300, 20], "theme": "dark"}
             if "--voice-shortcut" in sys.argv:
                 settings.update(voice_shortcut="Ctrl+Alt+Shift+F9", engine="offline", model="small")
             (profile / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
@@ -149,7 +149,7 @@ def probe(executable=None):
         report = dict(passed=True, actual=info()["actual"], real_windows_hook=True,
                       input="Windows SendInput virtual-key events, no direct composition calls",
                       physical_hardware_tested=False, packaged=bool(executable),
-                      packaged_saved_theme="glass" if executable else None,
+                      packaged_saved_theme="dark" if executable else None,
                       packaged_saved_voice_shortcut="--voice-shortcut" in sys.argv,
                       fast_multiword_input=True, backspace_composition=True, native_password_passthrough=True,
                       slow_suggestions="--slow-suggestions" in sys.argv,

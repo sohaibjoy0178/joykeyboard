@@ -43,7 +43,7 @@ def probe():
             pass
     app.Recorder = FixtureRecorder
     window = app.JoyWindow()
-    window.theme_choice.setCurrentIndex(window.theme_choice.findData("glass"))
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData("dark"))
     window.auto_pause.setChecked(False)
     window.auto_type.setChecked(True)
     window.recognizer.transcribe = lambda *args, **kwargs: "আমি বাংলায় লিখি"

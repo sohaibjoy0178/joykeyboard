@@ -1,5 +1,5 @@
 ---
-name: JoyKeyboard Clear Glass
+name: JoyKeyboard Light and Dark Glass
 colors:
   primary: "#0068D9"
   secondary: "#E5F0FF"
@@ -29,10 +29,10 @@ spacing:
 # JoyKeyboard
 
 ## Overview
-Clear Glass is the default: genuine per-pixel transparency over Windows compositor blur, a neutral silver tint, narrow reflective rims and crisp navy text/blue controls. Background colors come from the desktop, never a simulated in-app wallpaper. Old Dark Glass preferences migrate to Clear Glass. Light Glass remains an opaque fallback. Both themes preserve keyboard, voice and data behavior.
+Two equal modes: **Light Glass** and **Dark Glass**. Both use actual per-pixel transparency and the same Windows compositor blur. Light uses silver tint/navy text; dark uses a smoke tint/ivory text. Neither mode uses opaque outer surfaces. Switch from Preferences or the bar Theme menu; keep selection after restart. Legacy Clear Glass maps to Light Glass; existing light/dark choices remain intact.
 
 ## Colors
-Clear outer shell alpha varies from 140 to 150/255, with white control/input overlays at 155/255 for legibility. No charcoal slabs. Foreground controls remain opaque; only materials are translucent. Unsupported blur uses a denser painted tint (210/255). Native popup menus remain readable opaque silver. No continuously captured desktop, animation timer or added dependency. Actual contrast depends on backdrop; Light Glass is available for consistently opaque text surfaces.
+Light shell alpha 140–150/255; dark shell alpha at least 165/255 for legibility over bright backgrounds. Controls, tool panels and inputs use translucent overlays matching their mode. Text and icons stay fully opaque at 100% bar opacity. Both use the same reflected rims and blue voice action. Native popups retain readable matching opaque surfaces. Missing blur uses denser 210/255 tint in the chosen mode, never switches modes.
 
 ## Typography
 Native Windows typography ensures readable rendering without remote font dependencies. Bengali uses system Bengali fallback.
@@ -41,7 +41,7 @@ Native Windows typography ensures readable rendering without remote font depende
 Default surface: a 384 by 48 logical-pixel frameless bar, always on top, near the top center of the work area. An icon-only brand and narrow grip leave space for language/layout, keyboard, voice, menu and hide controls. Keep the idle surface to one row; feedback and eight candidates expand only when relevant. Remember position and clamp to a connected screen. Opening a workspace is explicit; closing it returns to the bar. Explicit Quit preserves drafts and worker shutdown. The bar must not take focus from the destination editor.
 
 ## Elevation & Depth
-Bar and workspace use Windows compositor blur beneath a translucent painted shell. Window regions clip blur to rounded corners. Keep bar footprint/focus behavior and 70/80/90/100% foreground opacity option. At 100% foreground remains fully opaque while Clear Glass background is translucent. Light Glass at 100% remains fully opaque. Workspace uses a draggable title, double-click maximize/restore, minimize, close-to-bar and a resize grip because native frames cannot provide Qt per-pixel transparency. Native OS dialogs retain Windows styling. Windows blur is not Apple's proprietary Liquid Glass renderer; no refraction shader is claimed.
+Bar and workspace use Windows compositor blur beneath a translucent painted shell. Window regions clip blur to rounded corners. Keep bar footprint/focus behavior and 70/80/90/100% foreground opacity option. At 100% foreground remains fully opaque while both Light Glass and Dark Glass backgrounds stay translucent. Workspace uses a draggable title, double-click maximize/restore, minimize, close-to-bar and a resize grip because native frames cannot provide Qt per-pixel transparency. Native OS dialogs retain Windows styling. Windows blur is not Apple's proprietary Liquid Glass renderer; no refraction shader is claimed.
 
 ## Shapes
 Rounded controls and recording panel echo the icon. Transcript text area stays generous and simple.

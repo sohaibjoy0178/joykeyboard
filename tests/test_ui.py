@@ -181,7 +181,7 @@ def test_opacity_menu_updates_preferences_and_live_bar(window, qt_app):
     bar._menu.close()
 
 
-def test_glass_shell_is_opaque_readable_and_keeps_clear_corners(window, qt_app):
+def test_light_glass_shell_is_translucent_readable_and_keeps_clear_corners(window, qt_app):
     window.show_compact()
     qt_app.processEvents()
     shell = window.compact.shell
@@ -189,13 +189,15 @@ def test_glass_shell_is_opaque_readable_and_keeps_clear_corners(window, qt_app):
     frame = shell.grab().toImage()
     scale = frame.devicePixelRatio()
     center = frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale))
-    assert center.alpha() == 255 and min(center.red(), center.green(), center.blue()) > 200
+    assert 100 < center.alpha() < 230 and min(center.red(), center.green(), center.blue()) > 200
     assert frame.pixelColor(0, 0).alpha() < 30
 
 
-def test_clear_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_app, monkeypatch, tmp_path):
+@pytest.mark.parametrize("theme,index,error_color", [("light", 0, "#ae2638"), ("dark", 1, "#ffabb8")])
+def test_both_glass_themes_switch_all_surfaces_save_and_preserve_state(window, qt_app, tmp_path, theme, index, error_color):
     from core import load_settings
     from theme import style_sheet
+    window.theme_choice.setCurrentIndex(1 - index)
     window.show_compact()
     window.transcript.setPlainText("আমি বাংলায় লিখি। Draft stays here.")
     window.bar_opacity.setCurrentIndex(window.bar_opacity.findData(80))
@@ -203,58 +205,59 @@ def test_clear_theme_menu_switches_all_surfaces_and_preserves_state(window, qt_a
     window.compact.dismiss_feedback()
     window.settings_path = tmp_path / "settings.json"
     window.smoke = False
-    # Actual saves, but no hook, microphone, hotkey or autostart registration.
-    window.compact.main_menu()
-    menu = next(a.menu() for a in window.compact._menu.actions() if a.text() == "Theme")
-    menu.actions()[0].trigger()
-    window.compact._menu.close()
-    qt_app.processEvents()
-    assert window.theme_choice.currentData() == "glass"
-    assert load_settings(window.settings_path)[0]["theme"] == "glass"
-    assert window.styleSheet() == style_sheet("workspace", "glass")
-    assert window.tools.styleSheet() == style_sheet("tools", "glass")
-    assert window.compact.styleSheet() == style_sheet("bar", "glass")
-    assert window.tray.contextMenu().styleSheet() == style_sheet("bar", "glass")
-    assert window.state.property("error") is True
-    assert window.state.palette().windowText().color().name() == "#ae2638"
-    assert window.transcript.toPlainText() == "আমি বাংলায় লিখি। Draft stays here."
-    assert abs(window.compact.windowOpacity() - .8) < .01
-    assert window.settings["voice_shortcut"] == "Ctrl+Alt+Space"
-    window.compact.dismiss_feedback()
-    assert window.compact.size().width() == 384 and window.compact.height() == 48
-    shell = window.compact.shell
-    frame = shell.grab().toImage()
-    scale = frame.devicePixelRatio()
-    center = frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale))
-    assert 60 < center.alpha() < 230 and min(center.red(), center.green(), center.blue()) > 200
-    assert frame.pixelColor(0, 0).alpha() < 30
-    assert shell.graphicsEffect() is None
-    window.theme_choice.setCurrentIndex(1)
-    assert not shell.glass and load_settings(window.settings_path)[0]["theme"] == "light"
-    assert window.state.palette().windowText().color().name() == "#ae2638"
-    window.smoke = True
+    try:
+        window.compact.main_menu()
+        menu = next(a.menu() for a in window.compact._menu.actions() if a.text() == "Theme")
+        assert len(menu.actions()) == 2
+        menu.actions()[index].trigger()
+        window.compact._menu.close()
+        qt_app.processEvents()
+        assert window.theme_choice.currentData() == theme
+        assert load_settings(window.settings_path)[0]["theme"] == theme
+        assert window.styleSheet() == style_sheet("workspace", theme)
+        assert window.tools.styleSheet() == style_sheet("tools", theme)
+        assert window.compact.styleSheet() == style_sheet("bar", theme)
+        assert window.tray.contextMenu().styleSheet() == style_sheet("bar", theme)
+        assert window.state.palette().windowText().color().name() == error_color
+        assert window.transcript.toPlainText() == "আমি বাংলায় লিখি। Draft stays here."
+        assert abs(window.compact.windowOpacity() - .8) < .01
+        assert window.settings["voice_shortcut"] == "Ctrl+Alt+Space"
+        window.compact.dismiss_feedback()
+        assert window.compact.width() == 384 and window.compact.height() == 48
+        shell = window.compact.shell
+        frame = shell.grab().toImage()
+        scale = frame.devicePixelRatio()
+        center = frame.pixelColor(int(5 * scale), int(shell.height() / 2 * scale))
+        assert 100 < center.alpha() < 230
+        assert (max(center.red(), center.green(), center.blue()) < 60) if theme == "dark" else (min(center.red(), center.green(), center.blue()) > 200)
+        assert frame.pixelColor(0, 0).alpha() < 30 and shell.graphicsEffect() is None
+    finally:
+        window.smoke = True
 
 
-def test_saved_clear_theme_applies_at_launch(qt_app, monkeypatch):
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_saved_glass_theme_applies_at_launch(qt_app, monkeypatch, theme):
     from core import DEFAULT_RULES, DEFAULTS
-    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "glass", "rules": dict(DEFAULT_RULES)}, ""))
+    monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": theme, "rules": dict(DEFAULT_RULES)}, ""))
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
     view = JoyWindow(smoke=True)
     try:
-        assert view.theme_choice.currentData() == "glass"
-        assert view.compact.shell.glass
-        assert "rgba(255,255,255,155)" in view.tools.styleSheet()
+        assert view.theme_choice.currentData() == theme
+        assert view.compact.shell.dark == (theme == "dark")
+        assert "rgba(" in view.tools.styleSheet()
     finally:
         view.close()
 
 
-def test_clear_glass_fallback_and_frameless_workspace_controls(window, qt_app, monkeypatch):
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_glass_fallback_and_frameless_workspace_controls(window, qt_app, monkeypatch, theme):
     from types import SimpleNamespace
 
     from app import WindowTitle
     monkeypatch.setattr("app.set_glass_blur", lambda *_: False)
     monkeypatch.setattr("floating_bar.set_glass_blur", lambda *_: False)
-    window.theme_choice.setCurrentIndex(window.theme_choice.findData("glass"))
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData(theme))
+    window.apply_theme()
     window.show_studio()
     qt_app.processEvents()
     assert not window.native_glass and window.compact.shell.fallback

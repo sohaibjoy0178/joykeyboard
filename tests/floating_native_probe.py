@@ -21,7 +21,7 @@ def probe():
     application = QApplication([])
     application.setStyle("Fusion")
     view = app.JoyWindow(smoke=True)
-    view.theme_choice.setCurrentIndex(view.theme_choice.findData("glass"))
+    view.theme_choice.setCurrentIndex(view.theme_choice.findData("dark"))
     view.auto_type.setChecked(True)
     view.system_audio.setChecked(False)
     view.auto_pause.setChecked(False)
