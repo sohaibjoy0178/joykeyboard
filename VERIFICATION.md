@@ -1,4 +1,27 @@
-# JoyKeyboard 0.4.7 verification
+# JoyKeyboard 0.4.8 verification
+
+Delivered compact `dist/0.4.8/JoyKeyboard-Setup.exe`, **94,973,054 bytes** (95.0 MB / 90.6 MiB), down from **322,302,837 bytes**: **70.5% smaller**. SHA-256: `3dd14f013d19b46addad2a246363aad687a9f7af93b7a7f49e1b080af1544b61`. Installer/checksum: [v0.4.8](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.8). Private repository access required.
+
+## Smaller installer with optional offline downloads
+
+Measured prior payload: Base/Tiny weights alone consumed **210.53 MiB**; SpeechRecognition data occupied 42.48 MiB, including unused PocketSphinx models and encoders for other platforms; developer preview images occupied 3.81 MiB. Model weights now download only through the existing explicit Preferences action, as requested. A custom packaging hook includes SpeechRecognition's required version file and Windows FLAC encoder, omitting unused data. Only the three README previews are packaged. Speech engines, CPU inference runtime, audio codecs, local Silero pause detection, keyboard dictionaries, Qt rendering fallbacks and licenses remain. Uncompressed runtime payload measures **346.81 MiB**, before optional model downloads.
+
+Online voice typing and local pause detection work immediately with internet. To use offline voice, choose Tiny/Base/Small under Preferences → Local recognition and click Download offline model once. Afterward inference works without internet. Cached user models remain supported; no automatic downloads were introduced. Preferences/Help/README explain this change. Both transparent themes and the rounded bar fix are retained.
+
+## Executed checks
+
+- **198 pytest tests passed**, `artifacts/tests-0.4.8.log`, covering existing voice, explicit-download-only behavior, missing-model handling, cached/bundled model lookup, UI, shortcuts, keyboard and transparency checks. Two upstream Python 3.12 deprecation warnings remain.
+- Clean PyInstaller/Inno builds passed. All twelve embedded modules plus main matched final source. Required dictionaries, icons, Windows FLAC encoder, Silero ONNX model and notices found. Both Whisper weight files and PocketSphinx data absent (`artifacts/package-code-check.json`). Build log confirms project SpeechRecognition hook loaded.
+- Actual compact EXE ran from a fresh folder with System32-only PATH and empty profile. Default Light/saved Dark pixel checks passed. Google Bengali recognition and automatic pause Bengali passed **before any offline model was downloaded** (`artifacts/standalone-check.json`).
+- Downloaded Tiny through the source Recognizer's existing explicit preparation path into a disposable profile with no bundled-model fallback. The packaged EXE then transcribed the English fixture using that cached model with `HF_HUB_OFFLINE=1` and `TRANSFORMERS_OFFLINE=1`. This exercises real model download plus packaged offline inference; clicking Preferences download in the frozen UI was not automated. Upstream Hub emitted unauthenticated rate-limit advice and a deprecated symlink-argument warning, without blocking download.
+- Packaged normal hook startup/graceful close passed. Native packaged keyboard event probe stopped at its focus-preservation guard after another window became foreground, before typing. It was not repeatedly retried against an active desktop; this release's manual-keyboard regression check is incomplete. Keyboard composition/hook source is unchanged, and the full unit suite passed.
+- Actual temporary install/reinstall/uninstall passed: default checked autostart, quoted Run command, developer/Facebook metadata, disabling autostart, startup/graceful quit, startup removal on uninstall and preserved user data. Startup and shortcut state restored; user's app not overwritten or terminated (`artifacts/installer-check.json`).
+- Installed Dark Glass ten-second idle sample: **130.01 MiB working set**, **74.62 MiB private memory**, **1.250% of one CPU core**. App-process-only sample on this development PC, excluding DWM/GPU. Not a universal performance ceiling; package size reduction does not establish a CPU/RAM reduction.
+- Ruff, pip dependency check and Git whitespace validation passed. Installer SHA-256 accompanies release.
+
+Installer unsigned. Other PCs/Windows 10 hardware and live microphone quality not checked. Online speech needs internet and has existing service/accuracy limits. Offline setup now requires one explicit model download; first-time offline speech is unavailable until that finishes. No engine guarantees perfect Bengali accuracy.
+
+# Historical 0.4.7 verification
 
 Delivered `dist/0.4.7/JoyKeyboard-Setup.exe`, **322,302,837 bytes**. SHA-256: `64ab485cca3eeae42db4277720c0a671c323db00015f8b52a534d03f72139139`. Installer/checksum: [v0.4.7](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.7). Private repository access required.
 

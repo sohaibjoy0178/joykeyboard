@@ -96,11 +96,6 @@ def probe():
         center = frame.pixelColor(round(frame.width() * .018), frame.height() // 2)
         assert 100 < center.alpha() < 230
         assert (max(center.red(), center.green(), center.blue()) < 60) if dark else (min(center.red(), center.green(), center.blue()) > 200)
-    english = ROOT / "artifacts" / "standalone-offline-english.json"
-    run("offline-bundled-base", ["--check-audio", str(Path(tempfile.gettempdir()) / "joykeyboard-jfk.wav"),
-                                "--check-output", str(english), "--check-model", "base"])
-    offline = json.loads(english.read_text(encoding="utf-8"))
-    assert offline["packaged"] and "country" in offline["transcript"].lower()
     assert not (directory / "user-data" / "JoyKeyboard" / "models").exists()
     bengali = ROOT / "artifacts" / "standalone-online-bengali.json"
     run("online-bengali", ["--check-audio", str(ROOT / "artifacts" / "bn-10025278611427771211.pcm.wav"),
@@ -114,6 +109,19 @@ def probe():
                                "--check-language", "bn-BD", "--check-auto-pause"])
     paused = json.loads(pause.read_text(encoding="utf-8"))
     assert paused["packaged"] and paused["auto_pause_detected"] and "কিবোর্ড" in paused["transcript"]
+    assert not (directory / "user-data" / "JoyKeyboard" / "models").exists()
+    sys.path.insert(0, str(ROOT))
+    from voice import Recognizer
+    # Exercise the same explicit download path as Preferences, then use it in the EXE.
+    cache = directory / "user-data/JoyKeyboard/models"
+    client = Recognizer(cache, bundled_dir=directory / "no-bundle")
+    client.prepare_model("tiny")
+    assert client.model_ready("tiny")
+    english = ROOT / "artifacts" / "standalone-offline-english.json"
+    run("offline-downloaded-tiny", ["--check-audio", str(Path(tempfile.gettempdir()) / "joykeyboard-jfk.wav"),
+                                   "--check-output", str(english), "--check-model", "tiny"])
+    offline = json.loads(english.read_text(encoding="utf-8"))
+    assert offline["packaged"] and "country" in offline["transcript"].lower()
     normal = subprocess.Popen([str(executable)], cwd=directory, env=environment,
                               creationflags=subprocess.CREATE_NO_WINDOW)
     try:
@@ -131,7 +139,8 @@ def probe():
     report = {"executable": str(executable), "bytes": executable.stat().st_size,
               "sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
               "limited_path": environment["PATH"], "initial_user_cache_empty": True,
-              "offline_model_downloaded": False, "checks": checks, "passed": True}
+              "online_and_auto_pause_without_model_download": True,
+              "offline_model_downloaded_explicitly": "tiny", "checks": checks, "passed": True}
     (ROOT / "artifacts" / "standalone-check.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))

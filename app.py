@@ -354,7 +354,7 @@ class JoyWindow(QMainWindow):
         self.prepare_btn = button("Download offline model", self.prepare_model)
         row.addWidget(self.prepare_btn)
         layout.addLayout(row)
-        layout.addWidget(label("Base and Tiny are included. Small is an optional download. Local mode needs no internet, API key or GPU. Offline Bangla accuracy was poor in our sample checks; use online recognition for Bangla.", "muted", True))
+        layout.addWidget(label("Download Tiny, Base or Small once to use offline voice. After download, local mode needs no internet, API key or GPU. Online voice works immediately with internet. Offline Bangla accuracy was poor in our sample checks; use online recognition for Bangla.", "muted", True))
         layout.addWidget(label("Appearance & startup", "eyebrow"))
         theme_row = QHBoxLayout()
         theme_row.addWidget(label("Theme"))
@@ -421,7 +421,7 @@ class JoyWindow(QMainWindow):
 <p><b>Custom global shortcut:</b> Preferences → Voice shortcut lets you press your chosen keys, then Apply. Default is Ctrl+Alt+Space. Press once to start recording, again to finish and transcribe, even with the bar hidden. Conflicting shortcuts keep your previous working choice. Reset default restores Ctrl+Alt+Space. Automatic speech-pause finishing can be disabled for manual shortcut control. JoyKeyboard must stay running; protected Windows desktops cannot receive the shortcut.</p>
 <p><b>Start:</b> choose Bengali or English, select your microphone, focus a document and press <b>Ctrl + Alt + Space</b>. Speech pauses of about 1.5 seconds finish and transcribe automatically by default. Recording then stops; start again for the next phrase. Manual Finish or the shortcut also works. Ten seconds without speech discards an empty recording; the maximum is 60 seconds. Disable automatic finishing in Preferences or the bar menu for longer pauses.</p>
 <p><b>Free online:</b> Google web mode needs internet and no user API key. Audio goes to Google. Its shared testing access can be limited or revoked; availability is not guaranteed.</p>
-<p><b>Free offline:</b> multilingual Base/Tiny models are included. Choose Whisper in Voice studio. Larger Small model can be downloaded in Preferences. No API key or per-minute service fee. Accuracy and speed depend on model and PC.</p>
+<p><b>Free offline:</b> download Tiny, Base or Small once in Preferences, then choose Whisper in Voice studio. No internet needed after download, no API key or per-minute service fee. Online voice works immediately with internet. Accuracy and speed depend on model and PC.</p>
 <p><b>Keyboard:</b> F12 toggles system-wide typing. Choose phonetic, English or a fixed layout under Keyboard &amp; tools. A floating preview shows composition; Space/Enter commits the word, F1–F8 chooses a suggestion. Keyboard mode starts off each launch. Custom/browser secure fields may not be detected; turn keyboard mode off before passwords.</p>
 <p><b>Official cloud credentials:</b> Google Cloud Speech-to-Text is a separate service. Create a project, enable billing and Speech-to-Text, then configure Application Default Credentials. It is not the generic key used by online mode. This version does not include a paid Cloud connector.</p>
 <p><a href='https://docs.cloud.google.com/speech-to-text/docs/setup'>Google Cloud setup</a> &nbsp; · &nbsp;
@@ -433,7 +433,7 @@ class JoyWindow(QMainWindow):
 <p><b>Appearance and startup:</b> Light Glass and Dark Glass both show actual desktop colors through Windows compositor blur. Choose either in Preferences or the bar menu; choice is remembered. At 100% bar opacity controls stay crisp; Both materials remain translucent. Your selected light/dark theme is saved; older Clear Glass preferences become Light Glass. Drag the title to move the workspace, double-click to maximize/restore, or resize from the lower-right grip. Preferences and the installer offer startup at Windows sign-in, without automatically recording.</p>
 <h3>Developed by Sohaib Islam Joy</h3>
 <p><a href='https://www.facebook.com/sohaib.islam1997'>Facebook · Sohaib Islam Joy</a></p>
-<p>JoyKeyboard 0.4.7 · Independently built keyboard and voice utility</p>""", wrap=True)
+<p>JoyKeyboard 0.4.8 · Independently built keyboard and voice utility</p>""", wrap=True)
         help_text.setTextFormat(Qt.TextFormat.RichText)
         help_text.setOpenExternalLinks(True)
         layout.addWidget(help_text)

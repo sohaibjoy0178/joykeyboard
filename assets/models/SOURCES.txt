@@ -1,3 +1,3 @@
 Whisper models (MIT): https://github.com/openai/whisper
 CTranslate2 converted models: https://huggingface.co/Systran/faster-whisper-base and https://huggingface.co/Systran/faster-whisper-tiny
-Base and Tiny multilingual weights redistributed unmodified.
+Model weights are downloaded unmodified only when requested in Preferences; not bundled in the compact installer.

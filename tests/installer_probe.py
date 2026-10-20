@@ -34,7 +34,7 @@ def probe():
             raise RuntimeError("Existing JoyKeyboard installation found; do not overwrite its uninstall record.")
     except FileNotFoundError:
         pass
-    setup = ROOT / "dist" / "0.4.7" / "JoyKeyboard-Setup.exe"
+    setup = ROOT / "dist" / "0.4.8" / "JoyKeyboard-Setup.exe"
     directory = Path(tempfile.mkdtemp(prefix="joykeyboard-install-check-"))
     installed = directory / "App With Spaces"
     shortcut = Path(os.environ["APPDATA"]) / "Microsoft/Windows/Start Menu/Programs/JoyKeyboard.lnk"
@@ -53,7 +53,8 @@ def probe():
                         f"/LOG={directory / 'install.log'}"], check=True, timeout=180)
         executable = installed / "JoyKeyboard.exe"
         uninstall = installed / "unins000.exe"
-        assert executable.is_file() and (installed / "_internal/assets/models/base/model.bin").is_file()
+        assert executable.is_file() and (installed / "_internal/faster_whisper/assets/silero_vad_v6.onnx").is_file()
+        assert not (installed / "_internal/assets/models/base/model.bin").exists()
         expected = (f'"{executable}"', winreg.REG_SZ)
         assert read_startup() == expected, read_startup()
         defaults = configparser.ConfigParser()

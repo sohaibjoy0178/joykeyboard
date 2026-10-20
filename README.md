@@ -1,4 +1,4 @@
-# JoyKeyboard 0.4.7
+# JoyKeyboard 0.4.8
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
@@ -12,7 +12,7 @@ Windows Bengali/English keyboard and voice studio. Independently built; no NMS K
 
 ## Install with one EXE
 
-Open **dist/0.4.7/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, libraries, dictionaries and multilingual Whisper Base/Tiny weights are included. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 1 GB free installation space. Settings and learned words stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
+Open **dist/0.4.8/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition, choose Tiny/Base/Small and click **Download offline model** once; then use Whisper without internet. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
 
 Installer's **Select Additional Tasks** page offers **Start JoyKeyboard when I sign in to Windows**, checked by default, plus an optional desktop shortcut. Change startup any time under **Preferences → Appearance & startup**. Both use the same HKCU Run entry. Startup displays the idle floating bar; it never starts recording automatically. Windows Startup Apps policies can override startup. App uses one instance per user.
 
@@ -35,7 +35,7 @@ The workspace has a draggable title (double-click maximize/restore), minimize/cl
 
 ## Download from GitHub
 
-[Latest installer and source release](https://github.com/sohaibjoy0178/joykeyboard/releases/latest). Download **JoyKeyboard-Setup.exe** and install; no ZIP extraction needed. `SHA256SUMS.txt` accompanies the installer. Repository is private, so sign in with an authorized GitHub account. EXE is attached to GitHub Releases; source/build scripts remain in Git history. Large offline model weights are included in the installer and excluded from Git source history.
+[Latest installer and source release](https://github.com/sohaibjoy0178/joykeyboard/releases/latest). Download **JoyKeyboard-Setup.exe** and install; no ZIP extraction needed. `SHA256SUMS.txt` accompanies the installer. Repository is private, so sign in with an authorized GitHub account. EXE is attached to GitHub Releases; source/build scripts remain in Git history. Large offline model weights are downloaded only when explicitly requested in Preferences; they are excluded from the installer and Git source history. Previously downloaded models remain usable.
 
 ## Resource use
 
@@ -67,7 +67,7 @@ Turn **Finish on speech pause** off in the bar's three-dot menu or Preferences w
 | Engine | Key / cost | Behavior |
 | --- | --- | --- |
 | Google web, experimental | No user API key or app subscription | Sends recorded audio to Google. Internet required; access can change, be limited or stop. No production service guarantee. |
-| Offline Whisper | No key or per-minute service charge | Base and Tiny included. Runs on CPU, without audio upload. Optional Small download; larger does not guarantee better Bangla. |
+| Offline Whisper | No key or per-minute service charge | Download Tiny, Base or Small once in Preferences. Then runs on CPU without internet or audio upload; larger does not guarantee better Bangla. |
 
 No voice API key needed for these integrated modes. Official Google Cloud Speech-to-Text is a separate service, not integrated; its credentials cannot be entered here. Optional Gemini text assistance uses a separate user-supplied session key and may incur provider charges. Never embed shared secrets in a distributed EXE.
 
@@ -104,7 +104,7 @@ powershell -ExecutionPolicy Bypass -File .\build.ps1 -SkipInstall
 powershell -ExecutionPolicy Bypass -File .\build-installer.ps1 -SkipInstall
 ```
 
-`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.7/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. `assets/models/` must contain supplied Base/Tiny files; obtain unmodified files from repositories in `assets/models/SOURCES.txt` when rebuilding without weights. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
+`build-installer.ps1` requires Inno Setup 6.7+ ([official download](https://jrsoftware.org/isdl.php)); pass `-IsccPath` if not detected. It validates icons, runs tests, clean-builds installed runtime under `dist/0.4.8/JoyKeyboard/` and compiles the single `JoyKeyboard-Setup.exe`. Keep the runtime folder for debugging; distribute only the setup EXE. Original `build.ps1` still builds an optional portable one-file app at `dist/JoyKeyboard.exe`. Build on Windows x64; no cross-compilation. Offline model weights are not required to build and are never bundled. `assets/models/` supplies provenance and MIT notices. SpeechRecognition data includes only its required version file and Windows FLAC encoder; unused PocketSphinx models and other-platform encoders are excluded. Only the three README preview images are bundled. Dictionary provenance: `assets/keyboard/` and `KEYBOARD-SOURCES.md`.
 
 ## Licenses and replacement
 

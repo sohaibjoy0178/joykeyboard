@@ -4,7 +4,7 @@ import os
 from pathlib import Path
 import sys
 
-from PyInstaller.utils.hooks import collect_all, copy_metadata, collect_data_files
+from PyInstaller.utils.hooks import collect_all, copy_metadata
 
 project = Path(SPECPATH)
 # Unrelated tools on PATH can supply an incompatible ICU/OpenSSL DLL during scanning.
@@ -13,12 +13,15 @@ os.environ["PATH"] = os.pathsep.join(str(path) for path in (
     Path(sys.executable).parent, Path(sys.base_prefix), Path(sys.base_prefix) / "DLLs",
     windows / "System32", windows,
 ))
-datas = [(str(project / "docs" / "screenshots"), "docs/screenshots"),
+datas = [(str(project / "docs" / "screenshots" / name), "docs/screenshots")
+         for name in ("glass-light-bar.png", "glass-dark-bar.png", "dark-studio-composited.png")]
+datas += [
          (str(project / "assets" / "joykeyboard.png"), "assets"),
          (str(project / "assets" / "joykeyboard.ico"), "assets"),
          (str(project / "assets" / "joykeyboard.svg"), "assets"),
          (str(project / "assets" / "keyboard"), "assets/keyboard"),
-         (str(project / "assets" / "models"), "assets/models"),
+         (str(project / "assets" / "models" / "WHISPER-LICENSE.txt"), "assets/models"),
+         (str(project / "assets" / "models" / "SOURCES.txt"), "assets/models"),
          (str(project / "README.md"), "."),
          (str(project / "KEYBOARD-SOURCES.md"), "licenses"),
          (str(project / "assets" / "licenses"), "licenses/OpenSource")]
@@ -31,7 +34,6 @@ for package in ("faster_whisper", "ctranslate2", "onnxruntime", "tokenizers", "a
     datas += package_datas
     binaries += package_binaries
     hiddenimports += package_imports
-datas += collect_data_files("speech_recognition")
 datas += copy_metadata("SpeechRecognition", recursive=True)
 datas += copy_metadata("faster-whisper", recursive=True)
 
