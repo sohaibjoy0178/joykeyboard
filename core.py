@@ -13,7 +13,7 @@ DEFAULT_RULES = {
     "নতুন লাইন": "\n",
 }
 DEFAULT_VOICE_SHORTCUT = "Ctrl+Alt+Space"
-APP_VERSION = "0.4.14"
+APP_VERSION = "0.4.15"
 
 
 def parse_voice_shortcut(value):

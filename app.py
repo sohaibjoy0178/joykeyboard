@@ -1009,8 +1009,11 @@ class JoyWindow(QMainWindow):
         self.compact.sync_controls()
 
     def show_progress(self, message):
+        if self.cancel_event.is_set():
+            return
         self.message.setText(message)
-        self.compact.set_status("Listening…" if self.recorder is not None else "Working…", message)
+        title = message if self.state.text() == "Preparing model…" else "Listening…" if self.recorder is not None else "Working…"
+        self.compact.set_status(title, message)
 
     def receive_text(self, token, text):
         if token != self.generation or self.cancel_event.is_set():

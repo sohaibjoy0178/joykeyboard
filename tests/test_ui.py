@@ -279,6 +279,17 @@ def test_sherpa_update_failure_keeps_voice_and_app_update_status(window):
     assert window.record_btn.isEnabled() and not window.quitting
 
 
+def test_prepare_progress_is_visible_on_compact_bar_and_late_cancelled_progress_is_ignored(window):
+    window.set_status("Preparing model…", "Starting download")
+    window.show_progress("encoder.onnx · 42% (36.4 / 86.8 MiB)")
+    assert "42%" in window.compact.status.text() and window.compact.width() == 384
+    assert "42%" in window.compact.feedback.toolTip()
+    window.cancel_event.set()
+    window.set_status("Cancelled", "Download cancelled")
+    window.show_progress("encoder.onnx · 43%")
+    assert window.compact.status.text() == "Cancelled" and window.message.text() == "Download cancelled"
+
+
 def test_update_check_failure_is_nonblocking_and_can_retry(window, qt_app, monkeypatch):
     from updates import UpdateError
     def unavailable(*args):

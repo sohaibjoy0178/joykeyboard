@@ -2,10 +2,13 @@ import base64
 import hashlib
 import io
 import json
+import sys
 import threading
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import Mock
+from urllib.parse import urlsplit
+from urllib.request import Request
 
 import pytest
 
@@ -100,13 +103,13 @@ def test_verified_download_native_validation_atomic_activation_and_restart(insta
     manifest = newer()
     original = installed._model_path(voice.SHERPA_MODEL)
     monkeypatch.setattr(models, "check_channel", lambda: manifest)
-    def download(repo, name, **kwargs):
-        assert repo == voice.SHERPA_REPO and kwargs["revision"] == "b" * 40 and kwargs["token"] is False
-        path = Path(kwargs["local_dir"]) / name
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_bytes((name + "-old").encode())
-        return str(path)
-    monkeypatch.setattr("huggingface_hub.hf_hub_download", download)
+    def download(url, cancel):
+        assert f"/{voice.SHERPA_REPO}/resolve/{'b' * 40}/" in url
+        name = Path(urlsplit(url).path).name
+        response = io.BytesIO((name + "-old").encode())
+        response.headers = {}
+        return response
+    monkeypatch.setattr(models, "_open_model", download)
     stream = SimpleNamespace(accept_waveform=Mock(), input_finished=Mock())
     engine = SimpleNamespace(create_stream=lambda: stream, is_ready=lambda _: False, get_result=lambda _: "")
     build = Mock(return_value=engine)
@@ -170,3 +173,98 @@ def test_published_channel_is_valid_and_does_not_redefine_baseline_version():
     models.parse_manifest(manifest)
     if manifest["version"] == 1:
         assert manifest == models.baseline_manifest()
+
+
+def test_two_download_attempts_without_console_never_use_console_progress(installed, monkeypatch):
+    manifest = models.baseline_manifest()
+    path = installed.cache_dir / voice.SHERPA_MODEL
+    def opened(url, cancel):
+        name = Path(urlsplit(url).path).name
+        response = io.BytesIO((name + "-old").encode())
+        response.headers = {}
+        return response
+    monkeypatch.setattr(models, "_open_model", opened)
+    monkeypatch.setattr(sys, "stderr", None)
+    monkeypatch.setattr(sys, "stdout", None)
+    progress = []
+    for _ in range(2):
+        models.download_model(path, manifest, status=progress.append, force=True)
+    assert models.files_ready(path, manifest) and any("100%" in item for item in progress)
+    assert not list(path.glob("*.part"))
+
+
+@pytest.mark.parametrize("url", ["http://huggingface.co/file", "https://huggingface.co.evil.test/file",
+                                     "https://evil.test/file", "https://user@huggingface.co/file",
+                                     "https://huggingface.co:444/file", "file:///tmp/model"],
+                         ids=["http", "suffix", "foreign", "credentials", "port", "file"])
+def test_model_redirect_rejects_foreign_or_insecure_hosts(url):
+    redirect = models.ModelRedirects(None)
+    with pytest.raises(voice.VoiceError, match="untrusted"):
+        redirect.redirect_request(Request("https://huggingface.co/file"), None, 302, "found", {}, url)
+
+
+def test_model_connection_timeout_no_credentials_and_cancelled_redirect(monkeypatch):
+    opener = Mock()
+    monkeypatch.setattr(models, "build_opener", Mock(return_value=opener))
+    models._open_model("https://huggingface.co/file", None)
+    request = opener.open.call_args.args[0]
+    assert request.get_header("Authorization") is None
+    assert request.get_header("Accept-encoding") == "identity"
+    assert opener.open.call_args.kwargs["timeout"] == 5
+    cancel = threading.Event()
+    cancel.set()
+    with pytest.raises(voice.VoiceError, match="Cancelled"):
+        models.ModelRedirects(cancel).redirect_request(request, None, 302, "found", {}, "https://cdn-lfs.huggingface.co/file")
+
+
+@pytest.mark.parametrize("kind", ["declared-size", "invalid-length", "truncated", "oversized", "wrong-hash"],
+                         ids=["declared-size", "invalid-length", "truncated", "oversized", "wrong-hash"])
+def test_bad_stream_never_replaces_existing_valid_file(installed, monkeypatch, kind):
+    manifest = models.baseline_manifest()
+    path = installed.cache_dir / voice.SHERPA_MODEL
+    original = (path / "encoder.onnx").read_bytes()
+    contents = {"truncated": original[:-1], "oversized": original + b"x", "wrong-hash": b"x" * len(original)}.get(kind, original)
+    response = io.BytesIO(contents)
+    response.headers = {"Content-Length": "999999" if kind == "declared-size" else "invalid"} if kind in ("declared-size", "invalid-length") else {}
+    monkeypatch.setattr(models, "_open_model", Mock(return_value=response))
+    with pytest.raises(voice.VoiceError, match="verification failed"):
+        models.download_model(path, manifest, force=True)
+    assert (path / "encoder.onnx").read_bytes() == original and not list(path.glob("*.part"))
+
+
+def test_mid_stream_cancel_closes_response_and_cleans_partial(installed, monkeypatch):
+    manifest = models.baseline_manifest()
+    raw = b"a" * 200_000
+    manifest["files"]["encoder.onnx"] = {"size": len(raw), "sha256": hashlib.sha256(raw).hexdigest()}
+    response = io.BytesIO(raw)
+    response.headers = {}
+    monkeypatch.setattr(models, "_open_model", Mock(return_value=response))
+    cancel = threading.Event()
+    def progress(message):
+        if "%" in message:
+            cancel.set()
+    path = installed.cache_dir / "candidate"
+    with pytest.raises(voice.VoiceError, match="Cancelled"):
+        models.download_model(path, manifest, cancel, progress)
+    assert response.closed and not (path / "encoder.onnx").exists() and not list(path.glob("*.part"))
+
+
+def test_stalled_stream_times_out_cleans_partial_and_allows_retry(installed, monkeypatch):
+    manifest = models.baseline_manifest()
+    path = installed.cache_dir / "candidate"
+    class Stalled(io.BytesIO):
+        headers = {}
+        def read1(self, size):
+            raise TimeoutError("server stopped responding")
+    monkeypatch.setattr(models, "_open_model", Mock(return_value=Stalled()))
+    with pytest.raises(voice.VoiceError, match="timed out"):
+        models.download_model(path, manifest)
+    assert not list(path.glob("*.part"))
+    def opened(url, cancel):
+        name = Path(urlsplit(url).path).name
+        response = io.BytesIO((name + "-old").encode())
+        response.headers = {}
+        return response
+    monkeypatch.setattr(models, "_open_model", opened)
+    models.download_model(path, manifest)
+    assert models.files_ready(path, manifest)

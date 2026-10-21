@@ -6,7 +6,11 @@ import hashlib
 import json
 import os
 import re
+import tempfile
 from pathlib import Path
+from urllib.error import HTTPError, URLError
+from urllib.parse import urlsplit
+from urllib.request import HTTPRedirectHandler, Request, build_opener
 
 import numpy as np
 
@@ -16,6 +20,75 @@ from core import APP_VERSION
 
 CHANNEL_URL = "https://api.github.com/repos/sohaibjoy0178/joykeyboard/contents/assets/models/sherpa-channel.json?ref=main"
 MAX_MANIFEST = 16_384
+DOWNLOAD_TIMEOUT = 5
+
+
+def _trusted_model_url(url):
+    parts = urlsplit(url)
+    host = parts.hostname or ""
+    if (parts.scheme != "https" or parts.username or parts.password or parts.port not in (None, 443)
+            or not (host == "huggingface.co" or host.endswith((".huggingface.co", ".hf.co")))):
+        raise voice.VoiceError("Sherpa download redirected to an untrusted address.")
+    return url
+
+
+class ModelRedirects(HTTPRedirectHandler):
+    def __init__(self, cancel):
+        super().__init__()
+        self.cancel = cancel
+
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        voice.Recognizer._check_cancel(self.cancel)
+        return super().redirect_request(req, fp, code, msg, headers, _trusted_model_url(newurl))
+
+
+def _open_model(url, cancel):
+    request = Request(_trusted_model_url(url), headers={
+        "User-Agent": f"JoyKeyboard/{APP_VERSION}", "Accept-Encoding": "identity",
+    })
+    return build_opener(ModelRedirects(cancel)).open(request, timeout=DOWNLOAD_TIMEOUT)
+
+
+def _download_file(path, manifest, name, item, cancel, status):
+    url = f"https://huggingface.co/{manifest['repo']}/resolve/{manifest['revision']}/{name}?download=true"
+    path.mkdir(parents=True, exist_ok=True)
+    temporary = None
+    try:
+        # Console progress libraries can deadlock after a windowed app's stderr write fails.
+        with _open_model(url, cancel) as response, tempfile.NamedTemporaryFile(
+                dir=path, prefix=f".{name}.", suffix=".part", delete=False) as output:
+            temporary = Path(output.name)
+            length = response.headers.get("Content-Length")
+            if length is not None and (not length.isdecimal() or int(length) != item["size"]):
+                raise voice.VoiceError("Sherpa model verification failed: unexpected download size.")
+            received, last_percent = 0, -1
+            digest = hashlib.sha256()
+            while True:
+                voice.Recognizer._check_cancel(cancel)
+                block = response.read1(64 * 1024)
+                voice.Recognizer._check_cancel(cancel)
+                if not block:
+                    break
+                received += len(block)
+                if received > item["size"]:
+                    raise voice.VoiceError("Sherpa model verification failed: download is too large.")
+                output.write(block)
+                digest.update(block)
+                percent = received * 100 // item["size"]
+                if status and percent != last_percent:
+                    status(f"{name} · {percent}% ({received / 1024**2:.1f} / {item['size'] / 1024**2:.1f} MiB)")
+                    last_percent = percent
+            if received != item["size"] or digest.hexdigest() != item["sha256"]:
+                raise voice.VoiceError("Sherpa model verification failed. Retry the download.")
+        voice.Recognizer._check_cancel(cancel)
+        os.replace(temporary, path / name)
+    except voice.VoiceError:
+        raise
+    except (HTTPError, URLError, OSError) as exc:
+        raise voice.VoiceError("Sherpa download failed or timed out. Check internet and free disk space, then retry Prepare.") from exc
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
 
 
 def baseline_manifest():
@@ -71,19 +144,15 @@ def active_model(cache):
 
 
 def download_model(path, manifest, cancel=None, status=None, force=False):
-    from huggingface_hub import hf_hub_download
-
+    manifest = parse_manifest(manifest)
     for name, item in manifest["files"].items():
         voice.Recognizer._check_cancel(cancel)
         if status:
             status(f"Preparing Sherpa Bangla: {name}.")
         downloaded = path / name
         if force or not downloaded.is_file():
-            # shortcut: cancellation applies between file downloads; use chunked transport if needed.
-            downloaded = Path(hf_hub_download(manifest["repo"], name, revision=manifest["revision"],
-                                             local_dir=str(path), token=False, force_download=force))
-        if downloaded.resolve() != (path / name).resolve():
-            raise voice.VoiceError("Sherpa download returned an unexpected file location.")
+            _download_file(path, manifest, name, item, cancel, status)
+            continue
         with downloaded.open("rb") as stream:
             valid = downloaded.stat().st_size == item["size"] and hashlib.file_digest(stream, "sha256").hexdigest() == item["sha256"]
         if not valid:
