@@ -22,7 +22,7 @@ def installed(tmp_path, monkeypatch):
     monkeypatch.setattr(voice, "SHERPA_FILES", {
         name: (len(raw), hashlib.sha256(raw).hexdigest()) for name, raw in data.items()
     })
-    client = voice.Recognizer(tmp_path / "cache", tmp_path / "no-bundle")
+    client = voice.Recognizer(tmp_path / "cache")
     path = client.cache_dir / voice.SHERPA_MODEL
     path.mkdir(parents=True)
     for name, raw in data.items():

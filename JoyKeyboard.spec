@@ -20,7 +20,7 @@ datas += [
          (str(project / "assets" / "joykeyboard.ico"), "assets"),
          (str(project / "assets" / "joykeyboard.svg"), "assets"),
          (str(project / "assets" / "keyboard"), "assets/keyboard"),
-         (str(project / "assets" / "models" / "WHISPER-LICENSE.txt"), "assets/models"),
+         (str(project / "assets" / "vad"), "assets/vad"),
          (str(project / "assets" / "models" / "SHERPA-LICENSE.txt"), "assets/models"),
          (str(project / "assets" / "models" / "SOURCES.txt"), "assets/models"),
          (str(project / "README.md"), "."),
@@ -30,13 +30,12 @@ binaries = []
 hiddenimports = []
 
 # Lazy recognition imports still need their native runtimes in the portable build.
-for package in ("faster_whisper", "ctranslate2", "onnxruntime", "sherpa_onnx", "tokenizers", "av", "sounddevice", "_sounddevice_data", "soundcard", "avro"):
+for package in ("onnxruntime", "sherpa_onnx", "sounddevice", "_sounddevice_data", "soundcard", "avro"):
     package_datas, package_binaries, package_imports = collect_all(package, include_py_files=False)
     datas += package_datas
     binaries += package_binaries
     hiddenimports += package_imports
 datas += copy_metadata("SpeechRecognition", recursive=True)
-datas += copy_metadata("faster-whisper", recursive=True)
 
 # Preserve upstream license files, including Qt/PySide6 LGPL notices and FFmpeg notices.
 dependency_notices = []
@@ -66,7 +65,7 @@ a = Analysis(
     [str(project / "main.py")], pathex=[str(project)],
     binaries=binaries, datas=datas, hiddenimports=hiddenimports,
     hookspath=[str(project / "hooks")], hooksconfig={}, runtime_hooks=[],
-    excludes=["tkinter", "pytest", "IPython", "matplotlib", "scipy", "torch", "tensorflow",
+    excludes=["tkinter", "pytest", "IPython", "matplotlib", "scipy", "torch", "tensorflow", "faster_whisper", "ctranslate2", "tokenizers", "huggingface_hub", "hf_xet", "av",
               "PySide6.QtWebEngineCore", "PySide6.QtWebEngineWidgets", "PySide6.QtQml",
               "PySide6.QtQuick", "PySide6.Qt3DCore", "PySide6.QtOpenGLWidgets"],
     noarchive=False, optimize=0,

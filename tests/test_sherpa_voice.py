@@ -20,7 +20,7 @@ def files(monkeypatch, tmp_path):
     monkeypatch.setattr(voice, "SHERPA_FILES", {
         name: (len(raw), hashlib.sha256(raw).hexdigest()) for name, raw in data.items()
     })
-    client = voice.Recognizer(tmp_path / "cache", tmp_path / "no-bundle")
+    client = voice.Recognizer(tmp_path / "cache")
     return client, data
 
 
@@ -84,21 +84,19 @@ def test_model_load_is_lazy_local_cpu_single_thread_and_switch_releases_models(f
         (path / name).write_bytes(raw)
     build = Mock(return_value=object())
     monkeypatch.setitem(sys.modules, "sherpa_onnx", SimpleNamespace(OnlineRecognizer=SimpleNamespace(from_transducer=build)))
-    client._model = object()
     model = client._load_sherpa()
     assert client._load_sherpa() is model and build.call_count == 1
-    assert client._model is None
     assert build.call_args.kwargs["num_threads"] == 1
     assert build.call_args.kwargs["provider"] == "cpu"
     assert build.call_args.kwargs["decoding_method"] == "greedy_search"
     client.unload_models("google")
-    assert client._sherpa is None and client._model is None
+    assert client._sherpa is None
 
 
 def test_missing_model_and_english_never_download_or_guess_language(files, monkeypatch):
     client, _ = files
     fetch = Mock()
-    monkeypatch.setattr("huggingface_hub.hf_hub_download", fetch)
+    monkeypatch.setattr(model_updates, "_open_model", fetch)
     with pytest.raises(voice.VoiceError, match="missing"):
         client._load_sherpa()
     with pytest.raises(voice.VoiceError, match="Bangla only"):

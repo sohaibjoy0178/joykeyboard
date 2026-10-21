@@ -1,7 +1,7 @@
 import threading
 
 import pytest
-from PySide6.QtCore import QPoint, Qt
+from PySide6.QtCore import QEvent, QPoint, Qt
 from PySide6.QtTest import QTest
 from PySide6.QtWidgets import QApplication
 
@@ -16,9 +16,10 @@ def qt_app():
 
 
 @pytest.fixture
-def window(qt_app, monkeypatch):
+def window(qt_app, monkeypatch, tmp_path):
     from core import DEFAULT_RULES, DEFAULTS
     monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "light", "rules": dict(DEFAULT_RULES)}, ""))
+    monkeypatch.setattr("app.data_directory", lambda: tmp_path)
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
     monkeypatch.setattr("app.key_down", lambda key: False)
     monkeypatch.setattr("app.model_updates.prepare_update", lambda *args: None)
@@ -38,6 +39,10 @@ def window(qt_app, monkeypatch):
     view.auto_type.setChecked(False)
     yield view
     view.close()
+    qt_app.processEvents()
+    view.compact.deleteLater()
+    view.deleteLater()
+    qt_app.sendPostedEvents(None, QEvent.Type.DeferredDelete)
 
 
 def test_speech_pause_finishes_without_click_and_types_once(window, monkeypatch):
@@ -85,7 +90,7 @@ def test_early_recognition_runs_once_and_stays_hidden_until_finish(window, monke
     assert transcribe.call_args.kwargs["early"] is early
 
 
-@pytest.mark.parametrize("mode", ["hold", "offline", "no_speech"])
+@pytest.mark.parametrize("mode", ["hold", "sherpa", "no_speech"])
 def test_early_recognition_does_not_run_for_hold_offline_or_empty_input(window, monkeypatch, mode):
     import time
     from types import SimpleNamespace
@@ -95,8 +100,8 @@ def test_early_recognition_does_not_run_for_hold_offline_or_empty_input(window, 
     window.pause_monitor = SimpleNamespace(reason=None, error=None, early_ready=True, stop=lambda: None)
     if mode == "hold":
         window.hold.setChecked(True)
-    elif mode == "offline":
-        window.engine.setCurrentIndex(window.engine.findData("offline"))
+    elif mode == "sherpa":
+        window.engine.setCurrentIndex(window.engine.findData("sherpa"))
     else:
         window.pause_monitor.reason = "no_speech"
     begin = Mock()
@@ -699,7 +704,7 @@ def test_finish_uses_capture_configuration_and_serial_job(window, monkeypatch):
 
 
 def test_missing_offline_model_does_not_start_microphone(window, monkeypatch):
-    window.engine.setCurrentIndex(window.engine.findData("offline"))
+    window.engine.setCurrentIndex(window.engine.findData("sherpa"))
     monkeypatch.setattr(window.recognizer, "model_ready", lambda _: False)
     window.start_recording()
     assert window.recorder is None
@@ -711,7 +716,7 @@ def test_sherpa_is_optional_experimental_bangla_only_and_needs_model(window, mon
     window.engine.setCurrentIndex(window.engine.findData("sherpa"))
     assert "Experimental" in window.engine_note.text()
     assert "22.1%" in window.model_note.text()
-    assert window.model.isHidden()
+    assert window.engine.count() == 2 and window.engine.findData("offline") == -1
     assert "Sherpa" in window.prepare_btn.text()
     monkeypatch.setattr(window.recognizer, "model_ready", lambda _: False)
     window.start_recording()
@@ -737,7 +742,7 @@ def test_sherpa_prepare_uses_dedicated_model_and_switching_releases_it(window, m
     window._idle()
     window.engine.setCurrentIndex(window.engine.findData("google"))
     assert window.recognizer._sherpa is None
-    assert not window.model.isHidden()
+    assert not hasattr(window, "model")
 
 
 def test_sherpa_job_runs_during_capture_keeps_stop_enabled_and_commits_once(window, monkeypatch):
@@ -889,7 +894,7 @@ def test_bar_menu_changes_existing_controls_and_reaches_every_tool(window, qt_ap
     def submenu(title):
         return next(action.menu() for action in bar._menu.actions() if action.text() == title)
     submenu("Speech engine").actions()[1].trigger()
-    assert window.engine.currentData() == "offline"
+    assert window.engine.currentData() == "sherpa"
     submenu("Voice language").actions()[1].trigger()
     assert window.language.currentData() == "en-US"
     submenu("Keyboard layout").actions()[2].trigger()

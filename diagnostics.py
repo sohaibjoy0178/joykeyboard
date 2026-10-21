@@ -39,12 +39,12 @@ def pause_capture(pcm: bytes, rate: int, on_early=None) -> tuple[bytes, dict]:
     raise VoiceError("No completed speech pause detected in test fixture.")
 
 
-def check_audio(path: Path, engine: str, output: Path, language="en-US", model="base", auto_pause=False) -> dict:
+def check_audio(path: Path, engine: str, output: Path, language="en-US", auto_pause=False) -> dict:
     path, output = Path(path), Path(output)
     if path.resolve() == output.resolve():
         raise VoiceError("Diagnostic output must differ from the input audio file.")
-    if engine not in ("google", "offline", "sherpa"):
-        raise VoiceError("Choose google or offline for the diagnostic engine.")
+    if engine not in ("google", "sherpa"):
+        raise VoiceError("Choose google or sherpa for the diagnostic engine.")
     try:
         if path.stat().st_size > 30_000_000:
             raise VoiceError("Diagnostic WAV must be smaller than 30 MB.")
@@ -71,12 +71,12 @@ def check_audio(path: Path, engine: str, output: Path, language="en-US", model="
         pcm, pause_result = pause_capture(pcm, rate, begin_early if engine == "google" else None)
         frames = len(pcm) // 2
     transcript = recognizer.transcribe(
-        pcm, rate, language, engine, model=model, cancel_event=cancelled, early=early,
+        pcm, rate, language, engine, cancel_event=cancelled, early=early,
     )
     result = {
         "engine": engine,
         "language": language,
-        "model": model if engine == "offline" else None,
+        "model": "sherpa-bn" if engine == "sherpa" else None,
         "transcript": transcript,
         "seconds": round(time.perf_counter() - started, 3),
         "sample_rate": rate,

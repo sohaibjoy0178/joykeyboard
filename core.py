@@ -13,7 +13,7 @@ DEFAULT_RULES = {
     "নতুন লাইন": "\n",
 }
 DEFAULT_VOICE_SHORTCUT = "Ctrl+Alt+Space"
-APP_VERSION = "0.4.15"
+APP_VERSION = "0.4.16"
 
 
 def parse_voice_shortcut(value):
@@ -54,7 +54,7 @@ def parse_voice_shortcut(value):
 
 
 DEFAULTS = {
-    "language": "bn-BD", "engine": "google", "model": "base", "device": None,
+    "language": "bn-BD", "engine": "google", "device": None,
     "auto_type": True, "bangla_digits": False, "hold_key": False, "auto_pause": True,
     "keyboard_layout": "phonetic", "output_encoding": "unicode", "system_audio": False,
     "bar_position": None, "bar_opacity": 100, "theme": "light",
@@ -92,9 +92,8 @@ def load_settings(path: Path) -> tuple[dict, str]:
         if not isinstance(saved, dict):
             raise ValueError("Settings must be a JSON object.")
         for key, allowed in {"language": ("bn-BD", "en-US"),
-                             "engine": ("google", "offline", "sherpa"),
-                             "theme": ("light", "dark"),
-                             "model": ("tiny", "base", "small")}.items():
+                             "engine": ("google", "sherpa"),
+                             "theme": ("light", "dark")}.items():
             if saved.get(key) in allowed:
                 values[key] = saved[key]
         if saved.get("theme") == "glass":

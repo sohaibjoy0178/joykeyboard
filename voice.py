@@ -2,12 +2,9 @@
 
 from __future__ import annotations
 
-import io
-import os
 import subprocess
 import sys
 import threading
-import wave
 from collections.abc import Callable
 from pathlib import Path
 
@@ -16,7 +13,6 @@ import sounddevice as sd
 import speech_recognition as sr
 
 Status = Callable[[str], None] | None
-MODELS = ("tiny", "base", "small")
 SHERPA_MODEL = "sherpa-bn"
 SHERPA_REPO = "csukuangfj2/sherpa-onnx-streaming-zipformer-bn-vosk-2026-02-09"
 SHERPA_REVISION = "a7c3c1547450a7c546c876be9ca8a6ab54464423"
@@ -278,7 +274,7 @@ class LoopbackRecorder(Recorder):
 
 
 def _speech_chunks(pcm, rate, min_speech_ms=120):
-    from faster_whisper.vad import VadOptions, get_speech_timestamps
+    from speech_vad import VadOptions, get_speech_timestamps
 
     raw = sr.AudioData(pcm, rate, 2).get_raw_data(convert_rate=16000, convert_width=2)
     samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768
@@ -377,26 +373,16 @@ class EarlyRecognition(threading.Thread):
 
 
 class Recognizer:
-    def __init__(self, cache_dir: Path, bundled_dir: Path | None = None):
+    def __init__(self, cache_dir: Path):
         self.cache_dir = Path(cache_dir)
-        self.bundled_dir = Path(bundled_dir) if bundled_dir is not None else Path(
-            getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)
-        ) / "assets" / "models"
-        self._model = None
-        self._model_name = None
         self._early = None
         self._sherpa = None
 
     def unload_models(self, engine):
-        if engine != "offline":
-            self._model = None
-            self._model_name = None
         if engine != "sherpa":
             self._sherpa = None
 
     def _load_sherpa(self):
-        self._model = None
-        self._model_name = None
         if self._sherpa is None:
             if not self.model_ready(SHERPA_MODEL):
                 raise VoiceError("Sherpa Bangla model is missing. Download it in Preferences first.")
@@ -433,77 +419,35 @@ class Recognizer:
             from model_updates import active_model
 
             return active_model(self.cache_dir)[0]
-        if model not in MODELS:
-            raise VoiceError("Choose a supported offline model: tiny, base, or small.")
-        cached = self.cache_dir / model
-        if self._complete(cached):
-            return cached
-        bundled = self.bundled_dir / model
-        return bundled if self._complete(bundled) else cached
+        raise VoiceError("Only the Sherpa Bangla model is supported.")
 
-    @staticmethod
-    def _complete(path: Path) -> bool:
-        return all((path / name).is_file() for name in ("model.bin", "config.json", "tokenizer.json"))
+    def model_ready(self, model: str = SHERPA_MODEL) -> bool:
+        from model_updates import active_model, files_ready
 
-    def model_ready(self, model: str = "base") -> bool:
-        if model == SHERPA_MODEL:
-            from model_updates import active_model, files_ready
-
-            return files_ready(*active_model(self.cache_dir))
-        path = self._model_path(model)
-        return self._complete(path)
+        if model != SHERPA_MODEL:
+            raise VoiceError("Only the Sherpa Bangla model is supported.")
+        return files_ready(*active_model(self.cache_dir))
 
     @staticmethod
     def _check_cancel(cancel_event: threading.Event | None) -> None:
         if cancel_event is not None and cancel_event.is_set():
             raise VoiceError("Cancelled.")
 
-    def _load_model(self, model: str):
-        self._sherpa = None
-        if model != self._model_name or self._model is None:
-            from faster_whisper import WhisperModel
-
-            self._model = None
-            self._model = WhisperModel(
-                str(self._model_path(model)), device="cpu", compute_type="int8",
-                local_files_only=True, cpu_threads=max(1, min(2, (os.cpu_count() or 2) // 2)),
-            )
-            self._model_name = model
-        return self._model
-
     def prepare_model(
-        self, model: str = "base", status: Status = None,
+        self, model: str = SHERPA_MODEL, status: Status = None,
         cancel_event: threading.Event | None = None,
         force: bool = False,
     ) -> None:
-        path = self._model_path(model)
+        self._model_path(model)
         self._check_cancel(cancel_event)
         try:
-            if model == SHERPA_MODEL:
-                from model_updates import active_model, download_model
+            from model_updates import active_model, download_model
 
-                path, manifest = active_model(self.cache_dir)
-                download_model(path, manifest, cancel_event, status, force)
-                self._check_cancel(cancel_event)
-                self._sherpa = None
-                self._load_sherpa()
-                self._check_cancel(cancel_event)
-                return
-            if force or not self.model_ready(model):
-                from faster_whisper.utils import download_model
-
-                if status:
-                    status(f"Downloading {model} speech model. This runs only once.")
-                path = self.cache_dir / model
-                path.mkdir(parents=True, exist_ok=True)
-                # shortcut: downloads finish before cancellation applies; add chunk cancellation if needed.
-                download_model(model, output_dir=str(path))
-                self._model = None
-                self._model_name = None
+            path, manifest = active_model(self.cache_dir)
+            download_model(path, manifest, cancel_event, status, force)
             self._check_cancel(cancel_event)
-            if status:
-                status("Checking offline speech model…")
-            self._load_model(model)
+            self._sherpa = None
+            self._load_sherpa()
             self._check_cancel(cancel_event)
         except VoiceError:
             raise
@@ -515,15 +459,15 @@ class Recognizer:
 
     def transcribe(
         self, pcm: bytes, sample_rate: int, language: str, engine: str,
-        model: str = "base", status: Status = None,
+        status: Status = None,
         cancel_event: threading.Event | None = None,
         early: EarlyRecognition | None = None,
     ) -> str:
         self._check_cancel(cancel_event)
         if language not in ("bn-BD", "en-US"):
             raise VoiceError("Choose Bangla or English as the speech language.")
-        if engine not in ("google", "offline", "sherpa"):
-            raise VoiceError("Choose Google online or offline speech recognition.")
+        if engine not in ("google", "sherpa"):
+            raise VoiceError("Choose Google or Sherpa speech recognition.")
         _validate_audio(pcm, sample_rate)
         if status:
             status("Recognizing speech…")
@@ -553,25 +497,6 @@ class Recognizer:
                     audio, language=language,
                     endpoint="https://www.google.com/speech-api/v2/recognize",
                 )
-            else:
-                if not self.model_ready(model):
-                    raise VoiceError("Offline model is missing. Click Prepare Model first.")
-                audio = io.BytesIO()
-                with wave.open(audio, "wb") as wav:
-                    wav.setnchannels(1)
-                    wav.setsampwidth(2)
-                    wav.setframerate(sample_rate)
-                    wav.writeframes(pcm)
-                audio.seek(0)
-                segments, _ = self._load_model(model).transcribe(
-                    audio, language=language.split("-")[0], beam_size=5,
-                    vad_filter=True, condition_on_previous_text=False,
-                )
-                parts = []
-                for segment in segments:
-                    self._check_cancel(cancel_event)
-                    parts.append(segment.text.strip())
-                text = " ".join(parts)
             self._check_cancel(cancel_event)
             if not text.strip():
                 raise VoiceError("No speech was understood. Move closer to the microphone and retry.")
@@ -585,8 +510,8 @@ class Recognizer:
                 "Google speech is unavailable. Check internet or switch to the prepared offline model."
             ) from exc
         except Exception as exc:
-            if engine in ("offline", "sherpa"):
-                message = "Offline speech failed. Retry Prepare Model or select a smaller model."
+            if engine == "sherpa":
+                message = "Sherpa speech failed. Retry Prepare Sherpa."
             else:
                 message = "Online recognition failed or timed out. Check internet and retry."
             raise VoiceError(message) from exc

@@ -15,9 +15,8 @@ def main():
     parser.add_argument("--smoke-test", metavar="PNG", help="Render UI, save screenshot and exit")
     parser.add_argument("--check-audio", metavar="WAV", help=argparse.SUPPRESS)
     parser.add_argument("--check-output", metavar="JSON", help=argparse.SUPPRESS)
-    parser.add_argument("--check-engine", choices=("google", "offline", "sherpa"), default="offline", help=argparse.SUPPRESS)
+    parser.add_argument("--check-engine", choices=("google", "sherpa"), default="google", help=argparse.SUPPRESS)
     parser.add_argument("--check-language", choices=("bn-BD", "en-US"), default="en-US", help=argparse.SUPPRESS)
-    parser.add_argument("--check-model", choices=("tiny", "base", "small"), default="base", help=argparse.SUPPRESS)
     parser.add_argument("--check-auto-pause", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     if args.check_audio and not args.check_output:
@@ -27,7 +26,7 @@ def main():
             from pathlib import Path
 
             from diagnostics import check_audio
-            check_audio(Path(args.check_audio), args.check_engine, Path(args.check_output), args.check_language, args.check_model, args.check_auto_pause)
+            check_audio(Path(args.check_audio), args.check_engine, Path(args.check_output), args.check_language, auto_pause=args.check_auto_pause)
             return 0
         from app import run
         return run(args.smoke_test)

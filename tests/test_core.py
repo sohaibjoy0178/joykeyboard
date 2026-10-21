@@ -92,3 +92,17 @@ def test_theme_migrates_validates_and_roundtrips(tmp_path):
         assert settings["theme"] == expected and not warning
         save_settings(path, settings)
         assert load_settings(path)[0]["theme"] == expected
+
+
+def test_removed_whisper_preferences_migrate_to_google_without_touching_models(tmp_path):
+    import json
+    model = tmp_path / "models/small/model.bin"
+    model.parent.mkdir(parents=True)
+    model.write_bytes(b"retained user download")
+    path = tmp_path / "settings.json"
+    path.write_text(json.dumps({"engine": "offline", "model": "small", "theme": "dark", "voice_shortcut": "Ctrl+Alt+V"}), encoding="utf-8")
+    settings, warning = load_settings(path)
+    assert not warning and settings["engine"] == "google" and "model" not in settings
+    assert settings["theme"] == "dark" and settings["voice_shortcut"] == "Ctrl+Alt+V"
+    save_settings(path, settings)
+    assert model.read_bytes() == b"retained user download"

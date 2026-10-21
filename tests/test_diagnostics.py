@@ -25,7 +25,7 @@ def test_pause_fixture_starts_one_early_request_and_still_waits_for_finish(monke
     assert len(early.call_args.args[0]) == 48000
 
 
-@pytest.mark.parametrize("engine,auto_pause", [("google", True), ("google", False), ("offline", True)])
+@pytest.mark.parametrize("engine,auto_pause", [("google", True), ("google", False), ("sherpa", True)])
 def test_packaged_diagnostic_exercises_early_path_only_for_online_pause(tmp_path, monkeypatch, engine, auto_pause):
     source = tmp_path / "speech.wav"
     with wave.open(str(source), "wb") as wav:

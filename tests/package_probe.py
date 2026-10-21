@@ -115,14 +115,7 @@ def probe():
     from voice import SHERPA_MODEL, Recognizer
     # Exercise the same explicit download path as Preferences, then use it in the EXE.
     cache = directory / "user-data/JoyKeyboard/models"
-    client = Recognizer(cache, bundled_dir=directory / "no-bundle")
-    client.prepare_model("tiny")
-    assert client.model_ready("tiny")
-    english = ROOT / "artifacts" / "standalone-offline-english.json"
-    run("offline-downloaded-tiny", ["--check-audio", str(Path(tempfile.gettempdir()) / "joykeyboard-jfk.wav"),
-                                   "--check-output", str(english), "--check-model", "tiny"])
-    offline = json.loads(english.read_text(encoding="utf-8"))
-    assert offline["packaged"] and "country" in offline["transcript"].lower()
+    client = Recognizer(cache)
     client.prepare_model(SHERPA_MODEL)
     sherpa = ROOT / "artifacts/standalone-sherpa-bengali.json"
     run("offline-streaming-sherpa-bengali", ["--check-audio", str(ROOT / "artifacts/bn-10025278611427771211.pcm.wav"),
@@ -169,7 +162,7 @@ def probe():
               "sha256": hashlib.sha256(executable.read_bytes()).hexdigest(),
               "limited_path": environment["PATH"], "initial_user_cache_empty": True,
               "online_and_auto_pause_without_model_download": True,
-              "offline_model_downloaded_explicitly": "tiny", "checks": checks, "passed": True}
+              "offline_model_downloaded_explicitly": "sherpa-bn", "checks": checks, "passed": True}
     (ROOT / "artifacts" / "standalone-check.json").write_text(
         json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))

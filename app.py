@@ -253,7 +253,6 @@ class JoyWindow(QMainWindow):
         controls.addWidget(self.language)
         self.engine = QComboBox()
         self.engine.addItem("Google web  ·  online, no key", "google")
-        self.engine.addItem("Whisper  ·  offline, no key", "offline")
         self.engine.addItem("Sherpa Bangla  ·  experimental, offline live", "sherpa")
         self.engine.setCurrentIndex(self.engine.findData(self.settings["engine"]))
         self.engine.setAccessibleName("Speech recognition engine")
@@ -336,11 +335,10 @@ class JoyWindow(QMainWindow):
         footer.addWidget(self.message, 1)
         footer.addWidget(QSizeGrip(self), 0, Qt.AlignmentFlag.AlignBottom)
         page.addLayout(footer)
-        for combo in (self.language, self.engine, self.devices, self.model):
+        for combo in (self.language, self.engine, self.devices):
             combo.currentIndexChanged.connect(self.persist)
         self.engine.currentIndexChanged.connect(self.update_engine)
         self.language.currentIndexChanged.connect(self.update_engine)
-        self.model.currentIndexChanged.connect(self.update_engine)
         for check in (self.auto_type, self.digits, self.hold, self.system_audio, self.auto_pause):
             check.toggled.connect(self.persist)
 
@@ -366,13 +364,7 @@ class JoyWindow(QMainWindow):
         layout.addWidget(self.shortcut_status)
         layout.addWidget(label("Local recognition", "eyebrow"))
         row = QHBoxLayout()
-        self.model = QComboBox()
-        for name, key in (("Tiny · fastest / lowest accuracy", "tiny"), ("Base · balanced", "base"), ("Small · larger / slower", "small")):
-            self.model.addItem(name, key)
-        self.model.setCurrentIndex(self.model.findData(self.settings["model"]))
-        self.model.setAccessibleName("Offline Whisper model")
-        row.addWidget(self.model, 1)
-        self.prepare_btn = button("Download offline model", self.prepare_model)
+        self.prepare_btn = button("Prepare Sherpa Bangla (~90 MiB)", self.prepare_model)
         row.addWidget(self.prepare_btn)
         layout.addLayout(row)
         self.model_note = label("", "muted", True)
@@ -462,7 +454,7 @@ class JoyWindow(QMainWindow):
 <p><b>Custom global shortcut:</b> Preferences → Voice shortcut lets you press your chosen keys, then Apply. Default is Ctrl+Alt+Space. Press once to start recording, again to finish and transcribe, even with the bar hidden. Conflicting shortcuts keep your previous working choice. Reset default restores Ctrl+Alt+Space. Automatic speech-pause finishing can be disabled for manual shortcut control. JoyKeyboard must stay running; protected Windows desktops cannot receive the shortcut.</p>
 <p><b>Start:</b> choose Bengali or English, select your microphone, focus a document and press <b>Ctrl + Alt + Space</b>. Speech pauses of about 1.2 seconds finish and transcribe automatically by default. Recording then stops; start again for the next phrase. Manual Finish or the shortcut also works. Ten seconds without speech discards an empty recording; the maximum is 60 seconds. Disable automatic finishing in Preferences or the bar menu for longer pauses.</p>
 <p><b>Free online:</b> Google web mode needs internet and no user API key. Audio goes to Google. Its shared testing access can be limited or revoked; availability is not guaranteed.</p>
-<p><b>Free offline:</b> download Tiny, Base or Small once in Preferences, then choose Whisper in Voice studio. No internet needed after download, no API key or per-minute service fee. Online voice works immediately with internet. Accuracy and speed depend on model and PC.</p>
+<p><b>Free offline:</b> prepare Sherpa Bangla once in Preferences, then choose Sherpa in Voice studio. Sherpa supports Bangla; use Google for English. No internet needed after download, no API key or per-minute service fee. Online voice works immediately with internet. Accuracy and speed depend on model and PC.</p>
 <p><b>Keyboard:</b> F12 toggles system-wide typing. Choose phonetic, English or a fixed layout under Keyboard &amp; tools. A floating preview shows composition; Space/Enter commits the word, F1–F8 chooses a suggestion. Keyboard mode starts off each launch. Custom/browser secure fields may not be detected; turn keyboard mode off before passwords.</p>
 <p><b>Official cloud credentials:</b> Google Cloud Speech-to-Text is a separate service. Create a project, enable billing and Speech-to-Text, then configure Application Default Credentials. It is not the generic key used by online mode. This version does not include a paid Cloud connector.</p>
 <p><a href='https://docs.cloud.google.com/speech-to-text/docs/setup'>Google Cloud setup</a> &nbsp; · &nbsp;
@@ -757,7 +749,7 @@ class JoyWindow(QMainWindow):
 
     def persist(self):
         self.settings.update(language=self.language.currentData(), engine=self.engine.currentData(),
-                             model=self.model.currentData(), device=self.devices.currentData(),
+                             device=self.devices.currentData(),
                              auto_type=self.auto_type.isChecked(), bangla_digits=self.digits.isChecked(),
                              auto_pause=self.auto_pause.isChecked(), auto_updates=self.auto_updates.isChecked(),
                              hold_key=self.hold.isChecked(), system_audio=self.system_audio.isChecked(),
@@ -866,24 +858,16 @@ class JoyWindow(QMainWindow):
         if self.job is None and self.recorder is None:
             self.recognizer.unload_models(engine)
         sherpa = engine == "sherpa"
-        self.model.setVisible(not sherpa)
-        self.prepare_btn.setText("Prepare Sherpa Bangla (~90 MiB)" if sherpa else "Download offline model")
         self.model_note.setText(
             "Experimental Bangla streaming. Downloads once; no internet, account, API key or GPU needed afterwards. "
             "Live preview appears while listening; final text is typed when you finish. In 12 test clips: Sherpa 22.1% word errors, "
             "Google 19.6%. Switching engines releases the loaded model."
-            if sherpa else "Download Tiny, Base or Small once to use offline voice. Offline Whisper Bangla was unreliable in sample checks; online recognition is recommended."
         )
         if sherpa:
             ready = self.recognizer.model_ready(SHERPA_MODEL)
             self.engine_note.setText("Experimental, Bangla only. " + ("Model ready. Live preview; final text on finish." if ready else "Download the model in Preferences first."))
             return
-        offline = engine == "offline"
-        ready = self.recognizer.model_ready(self.model.currentData())
-        note = ("Local audio processing. Model ready." if ready else "Prepare a model in Preferences before recording.") if offline else "Free personal/testing access. Audio sent to Google; internet required."
-        if offline and self.language.currentData() == "bn-BD":
-            note += " Offline Bangla was unreliable in sample checks; online recognition is recommended."
-        self.engine_note.setText(note)
+        self.engine_note.setText("Free personal/testing access. Audio sent to Google; internet required.")
 
     def set_status(self, title, message="", error=False):
         self.state.setText(title)
@@ -898,7 +882,7 @@ class JoyWindow(QMainWindow):
     def _controls(self, enabled):
         for widget in (self.shortcut_edit, self.shortcut_apply, self.shortcut_reset):
             widget.setEnabled(enabled)
-        for widget in (self.language, self.engine, self.devices, self.model, self.prepare_btn, self.system_audio, self.output_encoding, self.auto_pause):
+        for widget in (self.language, self.engine, self.devices, self.prepare_btn, self.system_audio, self.output_encoding, self.auto_pause):
             widget.setEnabled(enabled)
 
     def _idle(self):
@@ -933,8 +917,7 @@ class JoyWindow(QMainWindow):
         if engine == "sherpa" and self.language.currentData() != "bn-BD":
             self.set_status("Choose Bengali", "Experimental Sherpa supports Bangla only. Choose Bengali or another engine.", True)
             return
-        selected_model = SHERPA_MODEL if engine == "sherpa" else self.model.currentData()
-        if engine in ("offline", "sherpa") and not self.recognizer.model_ready(selected_model):
+        if engine == "sherpa" and not self.recognizer.model_ready(SHERPA_MODEL):
             self.set_status("Prepare offline model", "Open Preferences and download a model first.", True)
             return
         self.generation += 1
@@ -989,14 +972,14 @@ class JoyWindow(QMainWindow):
             return
         token = self.generation
         early = self.early_speech
-        language, engine, model = self.language.currentData(), self.engine.currentData(), self.model.currentData()
+        language, engine = self.language.currentData(), self.engine.currentData()
         self.record_btn.setEnabled(False)
         self.set_status("Transcribing…", "You can cancel; results from cancelled work will never be typed.")
         if self.stream_speech is not None:
             self.stream_speech.finish(audio, rate)
             self.compact.sync_controls()
             return
-        self.start_job(lambda status: self.recognizer.transcribe(audio, rate, language, engine, model, status=status, cancel_event=self.cancel_event, early=early),
+        self.start_job(lambda status: self.recognizer.transcribe(audio, rate, language, engine, status=status, cancel_event=self.cancel_event, early=early),
                        lambda text: self.receive_text(token, text))
 
     def start_job(self, function, success):
@@ -1079,10 +1062,8 @@ class JoyWindow(QMainWindow):
         self.record_btn.setEnabled(False)
         self.cancel_btn.setEnabled(True)
         self.set_status("Preparing model…", "Downloading to your local data folder. This can take a few minutes.")
-        model = SHERPA_MODEL if self.engine.currentData() == "sherpa" else self.model.currentData()
-        destination = "Sherpa Bangla" if model == SHERPA_MODEL else "Whisper"
-        self.start_job(lambda status: self.recognizer.prepare_model(model, status=status, cancel_event=self.cancel_event),
-                       lambda _: self.set_status("Offline model ready", f"Choose {destination} in Voice studio to use local recognition."))
+        self.start_job(lambda status: self.recognizer.prepare_model(SHERPA_MODEL, status=status, cancel_event=self.cancel_event),
+                       lambda _: self.set_status("Offline model ready", "Choose Sherpa Bangla in Voice studio to use local recognition."))
 
     def cancel(self):
         self.stop_pause_monitor()

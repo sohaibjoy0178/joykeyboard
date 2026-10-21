@@ -1,6 +1,6 @@
 param(
     [Parameter(Mandatory=$true)][string]$Executable,
-    [ValidateSet('Complete','Cancel','Quit','Reproduce')][string]$Mode='Complete'
+    [ValidateSet('Complete','Cancel','Quit','Reproduce','Migration')][string]$Mode='Complete'
 )
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName UIAutomationClient
@@ -11,6 +11,12 @@ $dataDir=Join-Path $profileDir 'JoyKeyboard'
 New-Item -ItemType Directory -Path $dataDir -Force | Out-Null
 $utf8=New-Object System.Text.UTF8Encoding($false)
 [IO.File]::WriteAllText((Join-Path $dataDir 'settings.json'),'{"engine":"sherpa","auto_updates":false,"theme":"dark"}',$utf8)
+if($Mode -eq 'Migration') {
+    [IO.File]::WriteAllText((Join-Path $dataDir 'settings.json'),'{"engine":"offline","model":"small","auto_updates":false,"theme":"dark"}',$utf8)
+    $oldModel=Join-Path $dataDir 'models\small\model.bin'
+    New-Item -ItemType Directory -Path (Split-Path -Parent $oldModel) -Force | Out-Null
+    [IO.File]::WriteAllText($oldModel,'preserved user model',$utf8)
+}
 $env:LOCALAPPDATA=$profileDir
 $env:HF_HOME=Join-Path $profileDir 'hf-empty'
 $env:PATH=Join-Path $env:SystemRoot 'System32'
@@ -83,6 +89,19 @@ function CloseBar {
 }
 try {
     InvokeNamed 'Open JoyKeyboard workspace'
+    if($Mode -eq 'Migration') {
+        $combo=WaitNamed 'Speech recognition engine'
+        $value=$combo.GetCurrentPattern([System.Windows.Automation.ValuePattern]::Pattern).Current.Value
+        if($value -notlike 'Google*') { throw "Legacy Whisper engine did not select Google: $value" }
+        $report.legacy_engine_selected=$value
+        CloseBar
+        if(-not $child.WaitForExit(12000)) { throw 'Migrated app did not exit.' }
+        if([IO.File]::ReadAllText($oldModel) -ne 'preserved user model') { throw 'Old model data changed.' }
+        $report.old_model_preserved=$true
+        $report.passed=$true
+        $report | ConvertTo-Json -Depth 5
+        return
+    }
     InvokeNamed 'Preferences'
     InvokeNamed $prepareName
     if($Mode -eq 'Reproduce') {

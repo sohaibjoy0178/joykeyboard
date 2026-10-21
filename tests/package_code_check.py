@@ -11,7 +11,7 @@ executable = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else ROOT / "dist"
 archive = CArchiveReader(str(executable))
 python_archive = archive.open_embedded_archive("PYZ.pyz")
 results = {}
-for name in ("app", "core", "voice", "windows", "diagnostics", "keyboard_engine", "keyboard_hook", "tools_ui", "floating_bar", "startup", "hotkeys", "theme", "updates", "model_updates"):
+for name in ("app", "core", "voice", "windows", "diagnostics", "keyboard_engine", "keyboard_hook", "tools_ui", "floating_bar", "startup", "hotkeys", "theme", "updates", "model_updates", "speech_vad"):
     code = python_archive.extract(name)
     expected = compile((ROOT / f"{name}.py").read_text(encoding="utf-8"), code.co_filename, "exec")
     results[name] = code == expected
@@ -21,8 +21,8 @@ assert main == compile((ROOT / "main.py").read_text(encoding="utf-8"), main.co_f
 results["main"] = True
 names = {name.replace("\\", "/") for name in archive.toc}
 for name in ("assets/keyboard/bn-words.json", "assets/keyboard/en-words.json", "assets/keyboard/layouts.json",
-             "faster_whisper/assets/silero_vad_v6.onnx", "speech_recognition/flac-win32.exe", "licenses/KEYBOARD-SOURCES.md",
-             "assets/joykeyboard.ico", "assets/models/WHISPER-LICENSE.txt", "assets/models/SHERPA-LICENSE.txt"):
+             "assets/vad/silero_vad_v6.onnx", "speech_recognition/flac-win32.exe", "licenses/KEYBOARD-SOURCES.md",
+             "assets/joykeyboard.ico", "assets/models/SHERPA-LICENSE.txt"):
     assert name in names or (executable.parent / "_internal" / name).is_file(), name
 results["required_assets"] = True
 for name in ("assets/models/base/model.bin", "assets/models/tiny/model.bin", "assets/models/sherpa-bn/encoder.onnx", "speech_recognition/pocketsphinx-data"):
@@ -31,3 +31,8 @@ for name in ("assets/models/base/model.bin", "assets/models/tiny/model.bin", "as
 results["compact_payload"] = True
 (ROOT / "artifacts" / "package-code-check.json").write_text(json.dumps(results, indent=2), encoding="utf-8")
 print(json.dumps(results))
+
+for package in ("faster_whisper", "ctranslate2", "tokenizers", "huggingface_hub", "hf_xet", "av"):
+    assert package not in python_archive.toc, package
+    assert not (executable.parent / "_internal" / package).exists(), package
+print("Removed Whisper runtime dependencies excluded.")

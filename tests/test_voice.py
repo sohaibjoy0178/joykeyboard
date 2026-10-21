@@ -1,6 +1,7 @@
 import io
 import sys
 import threading
+import wave
 from types import SimpleNamespace
 from unittest.mock import Mock, patch
 
@@ -13,7 +14,7 @@ PCM = b"\x00\x10" * 16000
 
 
 def test_web_flac_encoder_owns_windows_handles_and_roundtrips():
-    from faster_whisper.audio import decode_audio
+    from audio_fixture import decode_audio
     encoded = voice.WebAudio(PCM, 16000, 2).get_flac_data(convert_width=2)
     assert encoded.startswith(b"fLaC")
     decoded = decode_audio(io.BytesIO(encoded))
@@ -96,7 +97,7 @@ def test_pause_requires_speech_and_long_enough_silence():
     state = {"seconds": 1}
     recorder = SimpleNamespace(tail=lambda: (PCM * state["seconds"], 16000, 16000 * state["seconds"]))
     monitor = voice.PauseMonitor(recorder)
-    with patch("faster_whisper.vad.get_speech_timestamps", side_effect=[[{"start": 0, "end": 16000}], [], []]):
+    with patch("speech_vad.get_speech_timestamps", side_effect=[[{"start": 0, "end": 16000}], [], []]):
         monitor.check()
         assert monitor.reason is None
         state["seconds"] = 2
@@ -111,7 +112,7 @@ def test_resumed_speech_resets_pause_and_rolling_tail_uses_absolute_time():
     state = {"seconds": 1}
     recorder = SimpleNamespace(tail=lambda: (PCM * min(8, state["seconds"]), 16000, 16000 * state["seconds"]))
     monitor = voice.PauseMonitor(recorder)
-    with patch("faster_whisper.vad.get_speech_timestamps", side_effect=[
+    with patch("speech_vad.get_speech_timestamps", side_effect=[
         [{"start": 0, "end": 16000}], [{"start": 0, "end": 48000}], [{"start": 0, "end": 96000}],
     ]):
         monitor.check()
@@ -130,7 +131,7 @@ def test_pause_finishes_at_1_2_seconds_but_keeps_short_hesitation():
         16000, int(16000 * state["duration"]),
     ))
     monitor = voice.PauseMonitor(recorder)
-    with patch("faster_whisper.vad.get_speech_timestamps", return_value=[{"start": 0, "end": 16000}]):
+    with patch("speech_vad.get_speech_timestamps", return_value=[{"start": 0, "end": 16000}]):
         for duration in (1.0, 2.0, 2.19):
             state["duration"] = duration
             monitor.check()
@@ -163,12 +164,12 @@ def test_early_pause_resets_when_speech_resumes_without_finishing():
 def test_no_speech_timeout_and_stopped_monitor_does_not_deliver():
     recorder = SimpleNamespace(tail=lambda: (b"\0\0" * 160000, 16000, 160000))
     monitor = voice.PauseMonitor(recorder)
-    with patch("faster_whisper.vad.get_speech_timestamps", return_value=[]):
+    with patch("speech_vad.get_speech_timestamps", return_value=[]):
         monitor.check()
         assert monitor.reason == "no_speech"
     monitor = voice.PauseMonitor(recorder)
     monitor.stop()
-    with patch("faster_whisper.vad.get_speech_timestamps") as vad:
+    with patch("speech_vad.get_speech_timestamps") as vad:
         monitor.check()
         vad.assert_not_called()
         assert monitor.reason is None
@@ -239,7 +240,7 @@ def test_google_uses_https_timeout_and_no_user_key(tmp_path):
 
 @pytest.mark.parametrize("rate", [8000, 16000, 44100, 48000, 192000])
 def test_google_upload_is_speech_rate_with_matching_header_and_lossless_flac(tmp_path, rate):
-    from faster_whisper.audio import decode_audio
+    from audio_fixture import decode_audio
     from speech_recognition.recognizers.google import RequestBuilder
     original = np.full(rate, 4096, dtype=np.int16).tobytes()
     with patch.object(voice.sr.Recognizer, "recognize_google", return_value="text") as recognize:
@@ -259,42 +260,9 @@ def test_google_errors_are_readable(tmp_path, error):
         voice.Recognizer(tmp_path).transcribe(PCM, 16000, "en-US", "google")
 
 
-def test_offline_transcribe_never_downloads(tmp_path):
-    with patch("faster_whisper.utils.download_model") as download, pytest.raises(voice.VoiceError, match="Prepare Model"):
-        voice.Recognizer(tmp_path, bundled_dir=tmp_path / "no-bundle").transcribe(PCM, 16000, "bn-BD", "offline")
-    download.assert_not_called()
-
-
-def test_local_model_and_language_are_forwarded(tmp_path):
-    client = voice.Recognizer(tmp_path)
-    model = Mock()
-    model.transcribe.return_value = (iter([SimpleNamespace(text=" Hello "), SimpleNamespace(text="world")]), None)
-    with patch.object(client, "model_ready", return_value=True), patch.object(client, "_load_model", return_value=model):
-        assert client.transcribe(PCM * 3, 48000, "en-US", "offline", "tiny") == "Hello world"
-    audio = model.transcribe.call_args.args[0]
-    with voice.wave.open(audio, "rb") as wav:
-        assert wav.getframerate() == 48000
-        assert wav.getnchannels() == 1
-    assert model.transcribe.call_args.kwargs["language"] == "en"
-
-
-def test_prepare_is_only_explicit_download_path(tmp_path):
-    client = voice.Recognizer(tmp_path, bundled_dir=tmp_path / "absent")
-    with patch("faster_whisper.utils.download_model") as download, patch.object(client, "_load_model") as load:
-        client.prepare_model("tiny")
-    download.assert_called_once_with("tiny", output_dir=str(tmp_path / "tiny"))
-    load.assert_called_once_with("tiny")
-
-
-def test_local_model_load_cannot_download(tmp_path):
-    client = voice.Recognizer(tmp_path, bundled_dir=tmp_path / "absent")
-    with patch("faster_whisper.WhisperModel") as loader:
-        client._load_model("tiny")
-        client._load_model("tiny")
-    assert loader.call_count == 1
-    assert loader.call_args.args == (str(tmp_path / "tiny"),)
-    assert loader.call_args.kwargs["local_files_only"] is True
-    assert 1 <= loader.call_args.kwargs["cpu_threads"] <= 2
+def test_removed_whisper_engine_is_rejected(tmp_path):
+    with pytest.raises(voice.VoiceError, match="Google or Sherpa"):
+        voice.Recognizer(tmp_path).transcribe(PCM, 16000, "bn-BD", "offline")
 
 
 def test_cancelled_result_is_discarded(tmp_path):
@@ -326,10 +294,10 @@ def test_model_name_cannot_escape_cache(tmp_path):
 
 
 def test_offline_audio_decoder_dependency_compatibility():
-    from faster_whisper.audio import decode_audio
+    from audio_fixture import decode_audio
 
     audio = io.BytesIO()
-    with voice.wave.open(audio, "wb") as wav:
+    with wave.open(audio, "wb") as wav:
         wav.setnchannels(1)
         wav.setsampwidth(2)
         wav.setframerate(48000)
@@ -345,26 +313,3 @@ def test_silent_capture_never_calls_online_service(tmp_path):
         with pytest.raises(voice.VoiceError, match="silent"):
             voice.Recognizer(tmp_path).transcribe(b"\0\0" * 16000, 16000, "bn-BD", "google")
         recognize.assert_not_called()
-
-
-def test_bundled_model_works_without_user_cache_or_download(tmp_path):
-    bundle = tmp_path / "bundle" / "base"
-    bundle.mkdir(parents=True)
-    for name in ("model.bin", "config.json", "tokenizer.json"):
-        (bundle / name).write_bytes(b"test")
-    client = voice.Recognizer(tmp_path / "empty-cache", bundled_dir=bundle.parent)
-    assert client.model_ready("base")
-    assert client._model_path("base") == bundle
-    with patch("faster_whisper.WhisperModel") as load:
-        client._load_model("base")
-    assert load.call_args.args == (str(bundle),)
-    assert load.call_args.kwargs["local_files_only"] is True
-
-
-def test_user_model_precedes_bundled_model(tmp_path):
-    for root in (tmp_path / "cache", tmp_path / "bundle"):
-        (root / "base").mkdir(parents=True)
-        for name in ("model.bin", "config.json", "tokenizer.json"):
-            (root / "base" / name).write_bytes(b"test")
-    client = voice.Recognizer(tmp_path / "cache", bundled_dir=tmp_path / "bundle")
-    assert client._model_path("base") == tmp_path / "cache" / "base"

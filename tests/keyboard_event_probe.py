@@ -90,7 +90,7 @@ def probe(executable=None):
             profile.mkdir(parents=True)
             settings = {"bar_position": [300, 20], "theme": "dark"}
             if "--voice-shortcut" in sys.argv:
-                settings.update(voice_shortcut="Ctrl+Alt+Shift+F9", engine="offline", model="small")
+                settings.update(voice_shortcut="Ctrl+Alt+Shift+F9", engine="sherpa")
             (profile / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
             app_env = dict(environment, LOCALAPPDATA=str(directory / "profile"),
                            PATH=str(Path(os.environ["SystemRoot"]) / "System32"))
@@ -116,7 +116,7 @@ def probe(executable=None):
                 events += [Input(1, InputUnion(ki=KeyInput(key, 0, 2, 0, 0))) for key in reversed(chord)]
                 batch = (Input * len(events))(*events)
                 assert user32.SendInput(len(events), batch, ctypes.sizeof(Input)) == len(events)
-                # Missing Small model intentionally prevents microphone capture; shortcut reveals its error.
+                # Missing Sherpa model intentionally prevents microphone capture; shortcut reveals its error.
                 wait_for(lambda: bool(user32.IsWindowVisible(bar)), "Saved global shortcut did not reach packaged app")
                 assert foreground_target().pid == owned_pid
                 def feedback_visible():
