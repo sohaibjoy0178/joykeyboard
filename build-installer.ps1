@@ -24,10 +24,10 @@ if ($LASTEXITCODE -ne 0) { throw 'Tests failed.' }
 $previousMode = $env:JOYKEYBOARD_INSTALLER
 try {
     $env:JOYKEYBOARD_INSTALLER = '1'
-    & $python -m PyInstaller --noconfirm --clean --distpath dist\0.4.11 --workpath build\installer JoyKeyboard.spec
+    & $python -m PyInstaller --noconfirm --clean --distpath dist\0.4.12 --workpath build\installer JoyKeyboard.spec
     if ($LASTEXITCODE -ne 0) { throw 'App packaging failed.' }
 } finally { $env:JOYKEYBOARD_INSTALLER = $previousMode }
 & $IsccPath installer.iss
 if ($LASTEXITCODE -ne 0) { throw 'Installer compilation failed.' }
-Get-FileHash -Algorithm SHA256 -LiteralPath dist\0.4.11\JoyKeyboard-Setup.exe | Format-List
-Write-Host "Installer: $PSScriptRoot\dist\0.4.11\JoyKeyboard-Setup.exe"
+Get-FileHash -Algorithm SHA256 -LiteralPath dist\0.4.12\JoyKeyboard-Setup.exe | Format-List
+Write-Host "Installer: $PSScriptRoot\dist\0.4.12\JoyKeyboard-Setup.exe"

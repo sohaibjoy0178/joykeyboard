@@ -109,6 +109,7 @@ def probe():
                                "--check-language", "bn-BD", "--check-auto-pause"])
     paused = json.loads(pause.read_text(encoding="utf-8"))
     assert paused["packaged"] and paused["auto_pause_detected"] and "কিবোর্ড" in paused["transcript"]
+    assert paused["early_recognition_started"]
     assert not (directory / "user-data" / "JoyKeyboard" / "models").exists()
     sys.path.insert(0, str(ROOT))
     from voice import Recognizer

@@ -4,6 +4,7 @@ import hashlib
 import json
 import platform
 import sys
+import threading
 import time
 import wave
 from datetime import UTC, datetime
@@ -13,7 +14,7 @@ from core import data_directory
 from voice import PauseMonitor, Recognizer, Recorder, VoiceError
 
 
-def pause_capture(pcm: bytes, rate: int) -> tuple[bytes, dict]:
+def pause_capture(pcm: bytes, rate: int, on_early=None) -> tuple[bytes, dict]:
     """Feed a public fixture with trailing silence through the actual local detector."""
     padded = pcm + b"\0\0" * (rate * 2)
     class Feed:
@@ -22,6 +23,7 @@ def pause_capture(pcm: bytes, rate: int) -> tuple[bytes, dict]:
             return padded[max(0, self.size - rate * 16):self.size], rate, self.size // 2
     feed = Feed()
     monitor = PauseMonitor(feed)
+    attempted = False
     step = (rate // 4) * 2
     for size in range(step, min(len(padded), rate * 120) + 1, step):
         feed.size = size
@@ -31,6 +33,9 @@ def pause_capture(pcm: bytes, rate: int) -> tuple[bytes, dict]:
                                    "capture_end_seconds": round(size / (rate * 2), 3)}
         if monitor.reason == "no_speech":
             raise VoiceError("No speech detected in pause test fixture.")
+        if on_early is not None and monitor.early_ready and not attempted:
+            attempted = True
+            on_early(padded[:size])
     raise VoiceError("No completed speech pause detected in test fixture.")
 
 
@@ -56,11 +61,17 @@ def check_audio(path: Path, engine: str, output: Path, language="en-US", model="
         raise VoiceError("Cannot read diagnostic audio. Choose a valid mono PCM16 WAV.") from exc
     started = time.perf_counter()
     pause_result = {}
+    recognizer = Recognizer(data_directory() / "models")
+    cancelled = threading.Event()
+    early = None
+    def begin_early(audio):
+        nonlocal early
+        early = recognizer.start_early(audio, rate, language, cancelled)
     if auto_pause:
-        pcm, pause_result = pause_capture(pcm, rate)
+        pcm, pause_result = pause_capture(pcm, rate, begin_early if engine == "google" else None)
         frames = len(pcm) // 2
-    transcript = Recognizer(data_directory() / "models").transcribe(
-        pcm, rate, language, engine, model=model
+    transcript = recognizer.transcribe(
+        pcm, rate, language, engine, model=model, cancel_event=cancelled, early=early,
     )
     result = {
         "engine": engine,
@@ -72,6 +83,7 @@ def check_audio(path: Path, engine: str, output: Path, language="en-US", model="
         "channels": 1,
         "sample_width_bytes": 2,
         "audio_seconds": round(frames / rate, 3),
+        "early_recognition_started": early is not None,
         "pcm_sha256": hashlib.sha256(pcm).hexdigest(),
         "input_path": str(path.resolve()),
         "checked_at_utc": datetime.now(UTC).isoformat(),

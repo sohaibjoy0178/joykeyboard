@@ -127,6 +127,8 @@ class JoyWindow(QMainWindow):
         self.recognizer = Recognizer(data_directory() / "models")
         self.recorder = None
         self.pause_monitor = None
+        self.early_speech = None
+        self.early_attempted = False
         self.job = None
         self.cancel_event = threading.Event()
         self.generation = 0
@@ -429,7 +431,7 @@ class JoyWindow(QMainWindow):
         layout.addWidget(self.hold)
         self.auto_pause = QCheckBox(f"Finish automatically after a speech pause ({PauseMonitor.PAUSE_SECONDS:g} seconds)")
         self.auto_pause.setChecked(self.settings["auto_pause"])
-        self.auto_pause.setToolTip("Detects speech locally, then finishes and transcribes after a pause. Stops listening after each phrase. Disable for long thinking pauses; holding Right Ctrl still waits for release.")
+        self.auto_pause.setToolTip("Detects pauses locally. Google prepares results during a short pause, then delivers after recording finishes. Stops listening after each phrase. Disable for long thinking pauses; holding Right Ctrl still waits for release.")
         layout.addWidget(self.auto_pause)
         self.digits = QCheckBox("Use বাংলা digits in Bengali transcripts")
         self.digits.setChecked(self.settings["bangla_digits"])
@@ -811,6 +813,7 @@ class JoyWindow(QMainWindow):
 
     def _idle(self):
         self.stop_pause_monitor()
+        self.early_speech = None
         self.record_btn.setEnabled(True)
         self.record_btn.setText("●  Start recording")
         self.cancel_btn.setEnabled(False)
@@ -836,6 +839,8 @@ class JoyWindow(QMainWindow):
             return
         self.generation += 1
         self.cancel_event = threading.Event()
+        self.early_speech = None
+        self.early_attempted = False
         self.keyboard_resume = self.keyboard_hook.enabled
         self.keyboard_hook.set_enabled(False)
         self.keyboard_hook.reset()
@@ -875,10 +880,11 @@ class JoyWindow(QMainWindow):
             self.set_status("Recording failed", str(exc), True)
             return
         token = self.generation
+        early = self.early_speech
         language, engine, model = self.language.currentData(), self.engine.currentData(), self.model.currentData()
         self.record_btn.setEnabled(False)
         self.set_status("Transcribing…", "You can cancel; results from cancelled work will never be typed.")
-        self.start_job(lambda status: self.recognizer.transcribe(audio, rate, language, engine, model, status=status, cancel_event=self.cancel_event),
+        self.start_job(lambda status: self.recognizer.transcribe(audio, rate, language, engine, model, status=status, cancel_event=self.cancel_event, early=early),
                        lambda text: self.receive_text(token, text))
 
     def start_job(self, function, success):
@@ -1008,6 +1014,14 @@ class JoyWindow(QMainWindow):
                 elif self.pause_monitor.reason == "no_speech":
                     self.cancel()
                     self.set_status("No speech detected", "Recording discarded locally. Check the microphone and try again.", True)
+                elif (not self.early_attempted and not self.hold.isChecked()
+                      and self.engine.currentData() == "google"
+                      and getattr(self.pause_monitor, "early_ready", False)):
+                    self.early_attempted = True
+                    audio, rate = self.recorder.snapshot()
+                    self.early_speech = self.recognizer.start_early(
+                        audio, rate, self.language.currentData(), self.cancel_event,
+                    )
 
     def copy_text(self):
         QApplication.clipboard().setText(self.transcript.toPlainText())

@@ -76,6 +76,10 @@ class Recorder:
             start = max(0, self._size - int(seconds * self._sample_rate) * 2)
             return bytes(self._buffer[start:self._size]), self._sample_rate, self._size // 2
 
+    def snapshot(self) -> tuple[bytes, int]:
+        with self._lock:
+            return bytes(self._buffer[:self._size]), self._sample_rate
+
     def start(self) -> None:
         with self._lifecycle:
             if self._stream is not None:
@@ -246,9 +250,20 @@ class LoopbackRecorder(Recorder):
             self._thread.join(2)
 
 
+def _speech_chunks(pcm, rate, min_speech_ms=120):
+    from faster_whisper.vad import VadOptions, get_speech_timestamps
+
+    raw = sr.AudioData(pcm, rate, 2).get_raw_data(convert_rate=16000, convert_width=2)
+    samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768
+    return get_speech_timestamps(samples, VadOptions(
+        min_speech_duration_ms=min_speech_ms, min_silence_duration_ms=100, speech_pad_ms=0,
+    ))
+
+
 class PauseMonitor(threading.Thread):
     """Local speech detection off the audio/UI threads; never transcribes or uploads."""
     PAUSE_SECONDS = 1.2
+    EARLY_SECONDS = 0.35
     NO_SPEECH_SECONDS = 10
 
     def __init__(self, recorder):
@@ -256,6 +271,7 @@ class PauseMonitor(threading.Thread):
         self.recorder = recorder
         self.reason = None
         self.error = None
+        self.early_ready = False
         self._stop_event = threading.Event()
         self._last_end = None
         self._processed = 0
@@ -264,24 +280,18 @@ class PauseMonitor(threading.Thread):
         self._stop_event.set()
 
     def check(self):
-        from faster_whisper.vad import VadOptions, get_speech_timestamps
-
         pcm, rate, total = self.recorder.tail()
         if not pcm or total == self._processed or self._stop_event.is_set():
             return
         self._processed = total
-        raw = sr.AudioData(pcm, rate, 2).get_raw_data(convert_rate=16000, convert_width=2)
-        samples = np.frombuffer(raw, dtype=np.int16).astype(np.float32) / 32768
-        chunks = get_speech_timestamps(samples, VadOptions(
-            # Resolve chunk ends promptly; the phrase pause timer is applied below.
-            min_speech_duration_ms=120, min_silence_duration_ms=100, speech_pad_ms=0,
-        ))
+        chunks = _speech_chunks(pcm, rate)
         if self._stop_event.is_set():
             return
         duration = total / rate
         if chunks:
             end = (total - len(pcm) // 2) / rate + chunks[-1]["end"] / 16000
             self._last_end = max(self._last_end or 0, end)
+        self.early_ready = self._last_end is not None and duration - self._last_end >= self.EARLY_SECONDS
         if self._last_end is not None and duration - self._last_end >= self.PAUSE_SECONDS:
             self.reason = "pause"
         elif self._last_end is None and duration >= self.NO_SPEECH_SECONDS:
@@ -298,6 +308,47 @@ class PauseMonitor(threading.Thread):
                 self.error = "Automatic pause detection is unavailable. Click Finish or press Ctrl+Alt+Space to transcribe."
 
 
+class EarlyRecognition(threading.Thread):
+    """One bounded online request; no UI references or delivery before confirmed finish."""
+
+    def __init__(self, owner, pcm, rate, language, cancel_event):
+        super().__init__(daemon=True, name="JoyKeyboard early speech")
+        self.owner, self.pcm, self.rate, self.language = owner, pcm, rate, language
+        self.cancel_event = cancel_event
+        self.ready = threading.Event()
+        self.text = ""
+        self.error = None
+
+    def run(self):
+        try:
+            # shortcut: cancelled Google calls finish in background; use cancellable transport if instant abort is needed.
+            self.text = self.owner.transcribe(
+                self.pcm, self.rate, self.language, "google", cancel_event=self.cancel_event,
+            )
+        except Exception as exc:
+            self.error = exc
+        finally:
+            self.ready.set()
+            if self.owner._early is self:
+                self.owner._early = None
+
+    def matches(self, pcm, rate, language, cancel_event):
+        if rate != self.rate or language != self.language or cancel_event is not self.cancel_event:
+            return False
+        if not pcm.startswith(self.pcm):
+            return False
+        if len(pcm) == len(self.pcm):
+            return True
+        # Recheck stopped audio, including speech arriving after the monitor's last poll.
+        start = max(0, len(self.pcm) - rate)
+        boundary = (len(self.pcm) - start) / (rate * 2)
+        try:
+            return not any(chunk["end"] / 16000 > boundary
+                           for chunk in _speech_chunks(pcm[start:], rate, min_speech_ms=0))
+        except Exception:
+            return False  # A detector failure uses the ordinary complete recording.
+
+
 class Recognizer:
     def __init__(self, cache_dir: Path, bundled_dir: Path | None = None):
         self.cache_dir = Path(cache_dir)
@@ -306,6 +357,20 @@ class Recognizer:
         ) / "assets" / "models"
         self._model = None
         self._model_name = None
+        self._early = None
+
+    def start_early(self, pcm, rate, language, cancel_event):
+        running = self._early
+        if running is not None and running.is_alive():
+            return None
+        pending = EarlyRecognition(self, pcm, rate, language, cancel_event)
+        self._early = pending
+        try:
+            pending.start()
+        except RuntimeError:
+            self._early = None
+            return None
+        return pending
 
     def _model_path(self, model: str) -> Path:
         if model not in MODELS:
@@ -377,6 +442,7 @@ class Recognizer:
         self, pcm: bytes, sample_rate: int, language: str, engine: str,
         model: str = "base", status: Status = None,
         cancel_event: threading.Event | None = None,
+        early: EarlyRecognition | None = None,
     ) -> str:
         self._check_cancel(cancel_event)
         if language not in ("bn-BD", "en-US"):
@@ -398,6 +464,13 @@ class Recognizer:
             status("Recognizing speech…")
         try:
             if engine == "google":
+                if early is not None and early.matches(pcm, sample_rate, language, cancel_event):
+                    while not early.ready.wait(0.1):
+                        self._check_cancel(cancel_event)
+                    self._check_cancel(cancel_event)
+                    if early.error is not None:
+                        raise early.error
+                    return early.text
                 recognizer = sr.Recognizer()
                 recognizer.operation_timeout = 30
                 # Downsample before building the request so FLAC and its rate header agree.

@@ -1,9 +1,9 @@
 ; One installer EXE; installed runtime avoids one-file extraction at every launch.
 #ifndef AppVersion
-  #define AppVersion "0.4.11"
+  #define AppVersion "0.4.12"
 #endif
 #ifndef PayloadDir
-  #define PayloadDir "dist\0.4.11\JoyKeyboard"
+  #define PayloadDir "dist\0.4.12\JoyKeyboard"
 #endif
 
 [Setup]

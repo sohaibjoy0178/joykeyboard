@@ -74,6 +74,7 @@ def test_recorder_pcm_meter_and_cleanup(microphone):
     pcm = np.full(480, 4096, dtype=np.int16).tobytes()
     constructor.call_args.kwargs["callback"](pcm, 480, None, False)
     assert 0.49 < recorder.level < 0.51
+    assert recorder.snapshot() == (pcm, 48000)
     assert recorder.stop() == (pcm, 48000)
     assert recorder.level == 0
     stream.stop.assert_called_once()
@@ -136,6 +137,26 @@ def test_pause_finishes_at_1_2_seconds_but_keeps_short_hesitation():
         state["duration"] = 2.21
         monitor.check()
         assert monitor.reason == "pause"
+
+
+def test_early_pause_resets_when_speech_resumes_without_finishing():
+    state = {"frames": 16000}
+    recorder = SimpleNamespace(tail=lambda: (b"\0\0" * state["frames"], 16000, state["frames"]))
+    monitor = voice.PauseMonitor(recorder)
+    with patch.object(voice, "_speech_chunks", side_effect=[
+        [{"end": 16000}], [{"end": 16000}], [{"end": 28000}], [{"end": 28000}],
+    ]):
+        monitor.check()
+        assert not monitor.early_ready
+        state["frames"] = 24000
+        monitor.check()
+        assert monitor.early_ready and monitor.reason is None
+        state["frames"] = 28000
+        monitor.check()
+        assert not monitor.early_ready and monitor.reason is None
+        state["frames"] = 48000
+        monitor.check()
+        assert monitor.early_ready and monitor.reason == "pause"
 
 
 def test_no_speech_timeout_and_stopped_monitor_does_not_deliver():

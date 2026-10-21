@@ -56,6 +56,55 @@ def test_speech_pause_finishes_without_click_and_types_once(window, monkeypatch)
     assert window.transcript.toPlainText() == "আমি বাংলায় লিখি"
 
 
+def test_early_recognition_runs_once_and_stays_hidden_until_finish(window, monkeypatch):
+    import time
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    window.recorder = SimpleNamespace(level=0.1, error=None, snapshot=lambda: (b"early", 16000),
+                                      stop=lambda: (b"complete", 16000))
+    window.started = time.monotonic()
+    window.pause_monitor = SimpleNamespace(reason=None, error=None, early_ready=True, stop=lambda: None)
+    monkeypatch.setattr("app.foreground_target", lambda: None)
+    early = object()
+    begin = Mock(return_value=early)
+    monkeypatch.setattr(window.recognizer, "start_early", begin)
+    window.tick()
+    window.tick()
+    begin.assert_called_once_with(b"early", 16000, "bn-BD", window.cancel_event)
+    assert window.early_speech is early and window.recorder is not None
+    assert not window.transcript.toPlainText()
+    jobs = []
+    monkeypatch.setattr(window, "start_job", lambda function, success: jobs.append(function))
+    transcribe = Mock(return_value="full phrase")
+    monkeypatch.setattr(window.recognizer, "transcribe", transcribe)
+    window.pause_monitor.reason = "pause"
+    window.tick()
+    assert len(jobs) == 1 and window.recorder is None
+    jobs[0](None)
+    assert transcribe.call_args.kwargs["early"] is early
+
+
+@pytest.mark.parametrize("mode", ["hold", "offline", "no_speech"])
+def test_early_recognition_does_not_run_for_hold_offline_or_empty_input(window, monkeypatch, mode):
+    import time
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+    window.recorder = SimpleNamespace(level=0.1, error=None, cancel=lambda: None)
+    window.started = time.monotonic()
+    window.pause_monitor = SimpleNamespace(reason=None, error=None, early_ready=True, stop=lambda: None)
+    if mode == "hold":
+        window.hold.setChecked(True)
+    elif mode == "offline":
+        window.engine.setCurrentIndex(window.engine.findData("offline"))
+    else:
+        window.pause_monitor.reason = "no_speech"
+    begin = Mock()
+    monkeypatch.setattr(window.recognizer, "start_early", begin)
+    monkeypatch.setattr("app.foreground_target", lambda: None)
+    window.tick()
+    begin.assert_not_called()
+
+
 def test_empty_recording_cancels_locally_and_pause_failure_leaves_manual_finish(window, monkeypatch):
     import time
     from types import SimpleNamespace
