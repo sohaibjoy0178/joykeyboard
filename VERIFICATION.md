@@ -1,4 +1,53 @@
-# JoyKeyboard 0.4.12 verification
+# JoyKeyboard 0.4.13 verification
+
+Delivered `dist/0.4.13/JoyKeyboard-Setup.exe`, **100,919,813 bytes** (100.9 MB). SHA-256: `9acd2c385759438399ce0964dbda86ef23d4f0d6f5c8bccf10d617fc322155f9`. Installer/checksum: [v0.4.13](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.13).
+
+## Optional experimental Bangla streaming
+
+Sherpa is a third speech engine alongside Google and Whisper. Google remains default. After reviewing the accuracy difference below, the user explicitly approved an optional experimental engine. Select Sherpa Bangla in Voice studio or the floating-bar Speech engine menu, then Preferences > Local recognition > Prepare Sherpa Bangla. Its ~90 MiB model is an explicit one-time download, excluded from the installer. Subsequent recognition is local, Bangla-only, with no account, API key, internet or GPU requirement. CPU inference uses one thread. Existing shortcut, hold and automatic-pause controls work with the streaming worker. The 384x48 idle bar, Light/Dark alpha and hover shortcut remain unchanged.
+
+The existing voice QThread decodes while capture continues; model loading and inference do not run on the UI/audio callback thread. Partial text appears only as a preview on the existing recording row, elided to fit; final text is delivered once through the existing guarded insertion path. Stop drains the final recording tail even after Recorder clears its capture buffer. Generation/cancellation checks prevent cancelled or late results from being typed. Errors stop capture and remain visible. Switching engines drops model references; native libraries/shared VAD resources and allocator caches can retain memory. Selecting Sherpa or starting the app does not implicitly download or load its model. Preparation pins the model revision, disables account tokens and verifies fixed file sizes and SHA-256 hashes before loading. Cancellation during an individual model-file download takes effect after that file completes.
+
+## Accuracy, speed and resources
+
+Reproducible measurements and raw hypotheses: [benchmark methodology](docs/benchmarks/README.md), [results](docs/benchmarks/sherpa-0.4.13.json), [fixture manifest](tests/fixtures/sherpa-bengali.json). Google FLEURS Bengali India test split, first twelve archive entries, 157.56 seconds / 235 reference words, all labelled MALE; no transcript-based selection. Identical PCM for both engines. NFC/case/punctuation normalization, whitespace word scoring; compound spacing/spelling variations count as errors. This is a small read-speech screen rather than microphone/accent certification.
+
+| Paired accuracy screen | Sherpa | Google |
+| --- | ---: | ---: |
+| Word error rate | 22.13% | 19.57% |
+| Character error rate | 5.84% | 4.75% |
+
+Four-path beam search did not improve Sherpa accuracy (22.55% WER), so greedy decoding is retained. Original/exported model provenance, Apache-2.0 license, pinned revision and hashes are recorded under assets/models; FLEURS reference metadata is attributed under CC BY 4.0. No model weights or audio are committed.
+
+Host: AMD Ryzen 9 7900X, 24 logical CPUs, about 31 GiB usable RAM, Windows x64. OpenBLAS/OMP settings match main.py. Percentages below are process CPU time divided by wall time, expressed relative to **one core**, not total machine capacity. RAM is process working set, including shared libraries; compositor/GPU allocations are excluded.
+
+| Actual source Qt app replay | Measured |
+| --- | ---: |
+| Google idle before model use | 135.14 MiB resident / 81.35 MiB private |
+| First live preview | 1.501 seconds after recording starts |
+| Sherpa loaded idle | 329.72 MiB resident / 286.73 MiB private |
+| First recording including loading and pause detection | 15.66% of one core |
+| Warm recording including pause detection | 6.59% of one core |
+| Loaded idle, short five-second sample | 0.31% of one core |
+| Stop to recognition-result UI callback | 24.8 ms first / 50.5 ms warm |
+| Switch back to Google | 200.99 MiB resident / 152.00 MiB private |
+
+This profile uses the actual Qt job, visible bar, fixture recorder, local PauseMonitor, automatic typing disabled and no native keyboard hook. Stop timing ends at the callback, **before external typing**; the existing 1.2-second automatic-pause confirmation still applies. Repeating/cancelling/unloading left ~201.35 MiB resident, without another large retained-model increase. Idle percentages use short Windows-counter samples. Cancellation's coarse-clock zero is within timer resolution, not literally zero work.
+
+A separate three-clip realtime engine-only replay produced first partials in 1.516-1.519 seconds and final flush in 1.4-17.4 ms after input end, with 0.5 seconds of zero padding fed immediately. Active CPU was 2.54-3.43% of one core; loaded idle rounded to zero at counter resolution. Resident engine process was ~198-200 MiB versus Google's ~48 MiB. These exclude Qt, pause confirmation, microphone callbacks and delivery; do not present them as full-app latency or CPU.
+
+## Executed checks
+
+- **290 pytest tests passed**, two upstream Python deprecation warnings (`artifacts/tests-0.4.13-final.log`). New tests cover pinned explicit model download, hashes/path/size rejection, cancellation and offline cache reuse; lazy one-thread loading and model release; Bangla/missing-model guards; live preview versus one final result; draining stopped capture; cancellation during decoding; silence/invalid-rate/short audio; unchanged bar width in both themes; and streaming UI worker/error/control lifecycle. Existing keyboard, voice, shortcuts, settings and updater tests passed.
+- Source Qt realtime fixture replay exercised preview, finalization, warm repeat, cancellation and model release (`artifacts/sherpa-ui-profile-final.log`). Actual Windows global-shortcut and floating-bar probes passed with fixture capture/recognition: hidden-bar start/finish, focus retained, Bengali insertion once, keyboard resumed and hover hint visible (`artifacts/sherpa-global-shortcut.log`, `sherpa-floating-native.log`). No live microphone/physical input used.
+- Clean PyInstaller/Inno builds passed after all bundled source/assets/README changes (`artifacts/build-0.4.13-final.log`, `build-0.4.13-setup-final.log`). Thirteen embedded modules plus main match source; required licenses/assets present, optional model weights excluded. Bundled README exactly matches source.
+- Full fresh-folder packaged probe with initially empty profile and System32-only PATH passed Light/Dark alpha, online Bengali, Google early automatic-pause recognition, explicitly prepared Tiny offline English, explicitly prepared **Sherpa offline Bengali**, normal hook startup and graceful close (`artifacts/sherpa-package-final.log`). Model preparation uses the shared source path; the frozen Preferences download click was not separately automated. That full probe preceded only a README wording cleanup; final rebuilt binary passed code/README equality, UI smoke and **48 kHz Sherpa + automatic pause/VAD** with Hub access disabled (`artifacts/sherpa-final-rebuild-check.log`, `standalone-sherpa-48k-auto-pause-final.json`). Both packaged native ONNX runtimes loaded together successfully. CLI accelerated replay time is not realtime latency.
+- Final installer actual temporary install/reinstall/uninstall passed default-checked startup, quoted Run command, developer/Facebook metadata, startup-off removal, normal startup/graceful quit and preserved user data. Original registry/shortcut restored; user's running app untouched (`artifacts/installer-0.4.13-final.log`). Installed default-Google Dark ten-second sample: **133.25 MiB resident, 74.88 MiB private, 1.094% of one core**, including ordinary app/update activity. This is not a low-end hardware guarantee.
+- Application/tests/hooks Ruff, pip dependency validation and Git whitespace checks passed. Existing unrelated dictionary preparation-script lint issues remain as documented in 0.4.11. Updater code is unchanged; its tests passed, but complete update-install helper lifecycle was not rerun this release. Published release metadata/digest and the unauthenticated production update feed are checked during publication.
+
+Limits: real microphone performance, broad accents/female speech/noise and low-end/other PCs untested. Sherpa has slightly higher measured error rate and substantially more loaded RAM than Google; it previews locally but types the final result on finish. Google availability/network latency can vary. Installer unsigned. This release does not promise perfect recognition or identical Android-style behavior on every PC.
+
+# Historical 0.4.12 verification
 
 Delivered `dist/0.4.12/JoyKeyboard-Setup.exe`, **95,001,594 bytes** (95.0 MB). SHA-256: `a54f0154ab02a367f37c4ea1cdaddfeeef14822b0de1525faaa7e3ac2ca80cde`. Installer/checksum: [v0.4.12](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.12).
 

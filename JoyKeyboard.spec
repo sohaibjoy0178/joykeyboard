@@ -21,6 +21,7 @@ datas += [
          (str(project / "assets" / "joykeyboard.svg"), "assets"),
          (str(project / "assets" / "keyboard"), "assets/keyboard"),
          (str(project / "assets" / "models" / "WHISPER-LICENSE.txt"), "assets/models"),
+         (str(project / "assets" / "models" / "SHERPA-LICENSE.txt"), "assets/models"),
          (str(project / "assets" / "models" / "SOURCES.txt"), "assets/models"),
          (str(project / "README.md"), "."),
          (str(project / "KEYBOARD-SOURCES.md"), "licenses"),
@@ -29,7 +30,7 @@ binaries = []
 hiddenimports = []
 
 # Lazy recognition imports still need their native runtimes in the portable build.
-for package in ("faster_whisper", "ctranslate2", "onnxruntime", "tokenizers", "av", "sounddevice", "_sounddevice_data", "soundcard", "avro"):
+for package in ("faster_whisper", "ctranslate2", "onnxruntime", "sherpa_onnx", "tokenizers", "av", "sounddevice", "_sounddevice_data", "soundcard", "avro"):
     package_datas, package_binaries, package_imports = collect_all(package, include_py_files=False)
     datas += package_datas
     binaries += package_binaries

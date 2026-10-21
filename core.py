@@ -13,7 +13,7 @@ DEFAULT_RULES = {
     "নতুন লাইন": "\n",
 }
 DEFAULT_VOICE_SHORTCUT = "Ctrl+Alt+Space"
-APP_VERSION = "0.4.12"
+APP_VERSION = "0.4.13"
 
 
 def parse_voice_shortcut(value):
@@ -92,7 +92,7 @@ def load_settings(path: Path) -> tuple[dict, str]:
         if not isinstance(saved, dict):
             raise ValueError("Settings must be a JSON object.")
         for key, allowed in {"language": ("bn-BD", "en-US"),
-                             "engine": ("google", "offline"),
+                             "engine": ("google", "offline", "sherpa"),
                              "theme": ("light", "dark"),
                              "model": ("tiny", "base", "small")}.items():
             if saved.get(key) in allowed:

@@ -1,7 +1,8 @@
-"""Microphone capture and the two explicitly selected speech engines."""
+"""Microphone capture and explicitly selected speech engines."""
 
 from __future__ import annotations
 
+import hashlib
 import io
 import os
 import subprocess
@@ -17,10 +18,33 @@ import speech_recognition as sr
 
 Status = Callable[[str], None] | None
 MODELS = ("tiny", "base", "small")
+SHERPA_MODEL = "sherpa-bn"
+SHERPA_REPO = "csukuangfj2/sherpa-onnx-streaming-zipformer-bn-vosk-2026-02-09"
+SHERPA_REVISION = "a7c3c1547450a7c546c876be9ca8a6ab54464423"
+SHERPA_FILES = {
+    "encoder.onnx": (90994145, "779f2412d6fa56f76be9fe71349cdf3edd10434ae9b1fc5e49834fb904320516"),
+    "decoder.onnx": (2093080, "fc03e8ca154593b95748198a56de115d4e6048d97c41692f93dfefb05f3693b4"),
+    "joiner.onnx": (1026462, "1df7319f4f9c36d7130cacaf629e1d52e904070e7a14bca9d4f209edeb162da6"),
+    "tokens.txt": (6252, "6f3a4d64d7da07e7dd7f3fd679e07607be3ec149d1b807726dbb8bbcc80a9fe1"),
+}
 
 
 class VoiceError(RuntimeError):
     """An actionable recording or recognition error safe to show in the UI."""
+
+
+def _validate_audio(pcm, sample_rate):
+    if not isinstance(sample_rate, int) or not 8000 <= sample_rate <= 192000:
+        raise VoiceError("Unsupported audio sample rate. Select another microphone.")
+    if not isinstance(pcm, bytes) or len(pcm) % 2:
+        raise VoiceError("Recorded audio is invalid. Record again.")
+    if len(pcm) < sample_rate // 5:
+        raise VoiceError("Recording is too short. Speak for at least a moment.")
+    if len(pcm) > sample_rate * 2 * Recorder.MAX_SECONDS:
+        raise VoiceError("Recording is too long. Use clips shorter than 65 seconds.")
+    samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32)
+    if float(np.sqrt(np.mean(samples ** 2))) < 12:
+        raise VoiceError("Recording is silent. Check microphone input and speak closer to it.")
 
 
 class WebAudio(sr.AudioData):
@@ -79,6 +103,10 @@ class Recorder:
     def snapshot(self) -> tuple[bytes, int]:
         with self._lock:
             return bytes(self._buffer[:self._size]), self._sample_rate
+
+    def read_since(self, frame) -> tuple[bytes, int, int]:
+        with self._lock:
+            return bytes(self._buffer[frame * 2:self._size]), self._sample_rate, self._size // 2
 
     def start(self) -> None:
         with self._lifecycle:
@@ -358,6 +386,31 @@ class Recognizer:
         self._model = None
         self._model_name = None
         self._early = None
+        self._sherpa = None
+
+    def unload_models(self, engine):
+        if engine != "offline":
+            self._model = None
+            self._model_name = None
+        if engine != "sherpa":
+            self._sherpa = None
+
+    def _load_sherpa(self):
+        self._model = None
+        self._model_name = None
+        if self._sherpa is None:
+            if not self.model_ready(SHERPA_MODEL):
+                raise VoiceError("Sherpa Bangla model is missing. Download it in Preferences first.")
+            import sherpa_onnx
+
+            path = self._model_path(SHERPA_MODEL)
+            self._sherpa = sherpa_onnx.OnlineRecognizer.from_transducer(
+                encoder=str(path / "encoder.onnx"), decoder=str(path / "decoder.onnx"),
+                joiner=str(path / "joiner.onnx"), tokens=str(path / "tokens.txt"),
+                num_threads=1, provider="cpu", model_type="zipformer2", decoding_method="greedy_search",
+                enable_endpoint_detection=False,
+            )
+        return self._sherpa
 
     def start_early(self, pcm, rate, language, cancel_event):
         running = self._early
@@ -373,7 +426,7 @@ class Recognizer:
         return pending
 
     def _model_path(self, model: str) -> Path:
-        if model not in MODELS:
+        if model not in (*MODELS, SHERPA_MODEL):
             raise VoiceError("Choose a supported offline model: tiny, base, or small.")
         cached = self.cache_dir / model
         if self._complete(cached):
@@ -383,6 +436,9 @@ class Recognizer:
 
     @staticmethod
     def _complete(path: Path) -> bool:
+        if path.name == SHERPA_MODEL:
+            return all((path / name).is_file() and (path / name).stat().st_size == size
+                       for name, (size, _) in SHERPA_FILES.items())
         return all((path / name).is_file() for name in ("model.bin", "config.json", "tokenizer.json"))
 
     def model_ready(self, model: str = "base") -> bool:
@@ -395,6 +451,7 @@ class Recognizer:
             raise VoiceError("Cancelled.")
 
     def _load_model(self, model: str):
+        self._sherpa = None
         if model != self._model_name or self._model is None:
             from faster_whisper import WhisperModel
 
@@ -414,6 +471,33 @@ class Recognizer:
         path = self._model_path(model)
         self._check_cancel(cancel_event)
         try:
+            if model == SHERPA_MODEL:
+                from huggingface_hub import hf_hub_download
+
+                path = self.cache_dir / SHERPA_MODEL
+                for name, (size, digest) in SHERPA_FILES.items():
+                    self._check_cancel(cancel_event)
+                    if status:
+                        status(f"Preparing Sherpa Bangla: {name}. One-time model download is about 90 MiB.")
+                    # shortcut: a file download completes before cancel applies; use chunked transport if needed.
+                    downloaded = path / name
+                    if force or not downloaded.is_file():
+                        downloaded = Path(hf_hub_download(
+                            SHERPA_REPO, name, revision=SHERPA_REVISION, local_dir=str(path),
+                            token=False, force_download=force,
+                        ))
+                    if downloaded.resolve() != (path / name).resolve():
+                        raise VoiceError("Sherpa download returned an unexpected file location.")
+                    with downloaded.open("rb") as file:
+                        valid = downloaded.stat().st_size == size and hashlib.file_digest(file, "sha256").hexdigest() == digest
+                    if not valid:
+                        downloaded.unlink()
+                        raise VoiceError("Sherpa model verification failed. Retry the download.")
+                self._check_cancel(cancel_event)
+                self._sherpa = None
+                self._load_sherpa()
+                self._check_cancel(cancel_event)
+                return
             if force or not self.model_ready(model):
                 from faster_whisper.utils import download_model
 
@@ -447,23 +531,19 @@ class Recognizer:
         self._check_cancel(cancel_event)
         if language not in ("bn-BD", "en-US"):
             raise VoiceError("Choose Bangla or English as the speech language.")
-        if engine not in ("google", "offline"):
+        if engine not in ("google", "offline", "sherpa"):
             raise VoiceError("Choose Google online or offline speech recognition.")
-        if not isinstance(sample_rate, int) or not 8000 <= sample_rate <= 192000:
-            raise VoiceError("Unsupported audio sample rate. Select another microphone.")
-        if not isinstance(pcm, bytes) or len(pcm) % 2:
-            raise VoiceError("Recorded audio is invalid. Record again.")
-        if len(pcm) < sample_rate // 5:
-            raise VoiceError("Recording is too short. Speak for at least a moment.")
-        if len(pcm) > sample_rate * 2 * Recorder.MAX_SECONDS:
-            raise VoiceError("Recording is too long. Use clips shorter than 65 seconds.")
-        samples = np.frombuffer(pcm, dtype=np.int16).astype(np.float32)
-        if float(np.sqrt(np.mean(samples ** 2))) < 12:
-            raise VoiceError("Recording is silent. Check microphone input and speak closer to it.")
+        _validate_audio(pcm, sample_rate)
         if status:
             status("Recognizing speech…")
         try:
-            if engine == "google":
+            if engine == "sherpa":
+                if language != "bn-BD":
+                    raise VoiceError("Experimental Sherpa supports Bangla only. Choose Bengali or another engine.")
+                session = SherpaSession(self, None, cancel_event or threading.Event())
+                session.finish(pcm, sample_rate)
+                return session.run(status)
+            elif engine == "google":
                 if early is not None and early.matches(pcm, sample_rate, language, cancel_event):
                     while not early.ready.wait(0.1):
                         self._check_cancel(cancel_event)
@@ -514,8 +594,66 @@ class Recognizer:
                 "Google speech is unavailable. Check internet or switch to the prepared offline model."
             ) from exc
         except Exception as exc:
-            if engine == "offline":
+            if engine in ("offline", "sherpa"):
                 message = "Offline speech failed. Retry Prepare Model or select a smaller model."
             else:
                 message = "Online recognition failed or timed out. Check internet and retry."
             raise VoiceError(message) from exc
+
+
+class SherpaSession:
+    """Decode on the existing voice job; preview is never injected into the destination."""
+
+    def __init__(self, owner, recorder, cancel_event):
+        self.owner, self.recorder, self.cancel_event = owner, recorder, cancel_event
+        self._finished = threading.Event()
+        self._final = None
+        self.partial = ""
+
+    def finish(self, pcm, rate):
+        self._final = pcm, rate
+        self._finished.set()
+
+    def run(self, status=None):
+        try:
+            if status:
+                status("Loading Sherpa Bangla… Recording continues while the model loads.")
+            self.owner._check_cancel(self.cancel_event)
+            recognizer = self.owner._load_sherpa()
+            self.owner._check_cancel(self.cancel_event)
+            stream = recognizer.create_stream()
+            cursor = 0
+            while True:
+                self.owner._check_cancel(self.cancel_event)
+                final = self._finished.is_set()
+                if final:
+                    audio, rate = self._final
+                    _validate_audio(audio, rate)
+                    pcm = audio[cursor * 2:]
+                else:
+                    pcm, rate, _ = self.recorder.read_since(cursor)
+                if pcm:
+                    recognizer_input = np.frombuffer(pcm, dtype=np.int16).astype(np.float32) / 32768
+                    stream.accept_waveform(rate, recognizer_input)
+                    cursor += len(pcm) // 2
+                if final:
+                    stream.accept_waveform(rate, np.zeros(rate // 2, dtype=np.float32))
+                    stream.input_finished()
+                while recognizer.is_ready(stream):
+                    self.owner._check_cancel(self.cancel_event)
+                    recognizer.decode_stream(stream)
+                text = recognizer.get_result(stream).strip()
+                if text != self.partial:
+                    self.partial = text
+                    if status and text and not final:
+                        status(f"Live preview: {text}")
+                if final:
+                    self.owner._check_cancel(self.cancel_event)
+                    if not text:
+                        raise VoiceError("No speech was understood. Check microphone and speak clearly.")
+                    return text
+                self.cancel_event.wait(0.05)
+        except VoiceError:
+            raise
+        except Exception as exc:
+            raise VoiceError("Sherpa recognition failed. Retry model preparation or select another engine.") from exc

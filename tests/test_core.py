@@ -48,6 +48,15 @@ def test_settings_atomic_roundtrip(tmp_path):
     assert not path.with_suffix(".tmp").exists()
 
 
+def test_experimental_sherpa_engine_roundtrips_without_changing_default(tmp_path):
+    path = tmp_path / "settings.json"
+    settings, _ = load_settings(path)
+    assert settings["engine"] == "google"
+    settings["engine"] = "sherpa"
+    save_settings(path, settings)
+    assert load_settings(path)[0]["engine"] == "sherpa"
+
+
 def test_auto_pause_defaults_on_for_old_settings_and_accepts_only_bool(tmp_path):
     import json
     path = tmp_path / "settings.json"

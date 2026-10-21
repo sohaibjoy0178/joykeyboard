@@ -1,3 +1,10 @@
 Whisper models (MIT): https://github.com/openai/whisper
 CTranslate2 converted models: https://huggingface.co/Systran/faster-whisper-base and https://huggingface.co/Systran/faster-whisper-tiny
 Model weights are downloaded unmodified only when requested in Preferences; not bundled in the compact installer.
+
+Sherpa experimental Bengali streaming model (optional download only):
+Original model: https://huggingface.co/alphacep/vosk-model-small-streaming-bn
+ONNX export: https://huggingface.co/csukuangfj2/sherpa-onnx-streaming-zipformer-bn-vosk-2026-02-09
+Pinned revision: a7c3c1547450a7c546c876be9ca8a6ab54464423
+License: Apache-2.0, SHERPA-LICENSE.txt. Runtime/model CPU use requires no paid service or account.
+Weights are not bundled. Downloaded files are size/SHA-256 checked against voice.SHERPA_FILES.

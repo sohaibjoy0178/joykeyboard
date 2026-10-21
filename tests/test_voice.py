@@ -75,6 +75,7 @@ def test_recorder_pcm_meter_and_cleanup(microphone):
     constructor.call_args.kwargs["callback"](pcm, 480, None, False)
     assert 0.49 < recorder.level < 0.51
     assert recorder.snapshot() == (pcm, 48000)
+    assert recorder.read_since(240) == (pcm[480:], 48000, 480)
     assert recorder.stop() == (pcm, 48000)
     assert recorder.level == 0
     stream.stop.assert_called_once()

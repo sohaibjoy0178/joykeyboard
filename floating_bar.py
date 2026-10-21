@@ -321,8 +321,11 @@ class CompactBar(QWidget):
             self.feedback.hide()
             self._resize()
 
-    def update_recording(self, elapsed, level):
-        self.status.setText(f"Listening  ·  00:{min(int(elapsed), 60):02d}")
+    def update_recording(self, elapsed, level, preview=None):
+        self.status.setText(self.status.fontMetrics().elidedText(preview, Qt.TextElideMode.ElideRight, max(80, self.status.width()))
+                            if preview else f"Listening  ·  00:{min(int(elapsed), 60):02d}")
+        if preview:
+            self.status.setToolTip(f"Live preview: {preview}\nFinal text is typed when you finish.")
         self.meter.setValue(min(100, int(level * 100)))
 
     def update_candidates(self, raw, rendered, suggestions):

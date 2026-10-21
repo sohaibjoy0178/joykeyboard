@@ -1,0 +1,749 @@
+{
+  "hardware": {
+    "cpu": "AMD Ryzen 9 7900X",
+    "logical_cpus": 24,
+    "ram_bytes": 33157509120
+  },
+  "selection": "First 12 Bengali FLEURS test archive entries; 157.56 seconds, 235 reference words; all labelled MALE. No transcript-based selection.",
+  "approval": "User explicitly chose optional experimental engine after reviewing 22.1% vs 19.6% word errors. Google remains default.",
+  "accuracy_sherpa": {
+    "engine": "sherpa",
+    "method": "greedy_search",
+    "threads": 1,
+    "realtime_replay": false,
+    "machine": "AMD64",
+    "logical_cpus": 24,
+    "baseline_memory": {
+      "working_set_mib": 41.96484375,
+      "private_mib": 24.83203125,
+      "process_peak_working_set_mib": 41.96484375
+    },
+    "samples": [
+      {
+        "file": "bn-10012315972427481934.pcm.wav",
+        "reference": "জার্মানির অনেক বেক করা খাবারগুলিতে বাদাম, হ্যাজনেলট এবং অন্যান্য বাদামের উপাদান পাওয়া যায়। পছন্দের কেকগুলি প্রায়শই একটি কাপ ভরা কফির সাথে ভাল মানায়।",
+        "text": "জার্মানির অনেক বেক করা খাবারগুলিতে বাদাম হ্যাজন এবং অন্যান্য বাদামের উপাদান পাওয়া যায় পছন্দের কেকগুলি প্রায়শই একটি কাঠ ভেড়া কফির সাথে ভালো বানায়",
+        "audio_seconds": 16.2,
+        "wall_seconds": 0.4009529000031762,
+        "cpu_seconds": 0.390625,
+        "one_core_percent": 97.42416129099094,
+        "cpu_seconds_per_audio_second": 0.024112654320987654,
+        "word_errors": 5,
+        "reference_words": 23,
+        "character_errors": 9,
+        "reference_characters": 127,
+        "first_partial_seconds": 0.035443700035102665,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 199.14453125,
+          "private_mib": 180.81640625,
+          "process_peak_working_set_mib": 199.14453125
+        }
+      },
+      {
+        "file": "bn-10025278611427771211.pcm.wav",
+        "reference": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কী-বোর্ড কীরকম হবে।",
+        "text": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কি বোর্ড কি রকম হবে",
+        "audio_seconds": 10.44,
+        "wall_seconds": 0.2534734000219032,
+        "cpu_seconds": 0.25,
+        "one_core_percent": 98.62967868754549,
+        "cpu_seconds_per_audio_second": 0.023946360153256706,
+        "word_errors": 3,
+        "reference_words": 17,
+        "character_errors": 2,
+        "reference_characters": 67,
+        "first_partial_seconds": 0.03229030000511557,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 199.16015625,
+          "private_mib": 180.81640625,
+          "process_peak_working_set_mib": 199.1640625
+        }
+      },
+      {
+        "file": "bn-10059008353469041076.pcm.wav",
+        "reference": "হাইতিয়ান ইনস্টিটিউট ফর জাস্টিস অ্যান্ড ডেমোক্রেসি এর স্বতন্ত্র সমীক্ষাতে উল্লেখ করা হয়েছে যে নেপালি জাতিসংঘের শান্তিরক্ষা বাহিনী অজান্তেই হাইতিতে এই রোগটি নিয়ে এসেছিল।",
+        "text": "হাইথিয়ান ইনস্টিটিউট ফর জাস্টিস অ্যান্ড ডেমোক্রেসি এর স্বতন্ত্র সমীক্ষাতে উল্লেখ করা হয়েছে যে নেপালি জাতিসংঘের শান্তিরক্ষা বাহিনী অজান্তেই হাইতিতে এই রোগটি নিয়ে এসেছিল",
+        "audio_seconds": 14.58,
+        "wall_seconds": 0.36225060001015663,
+        "cpu_seconds": 0.359375,
+        "one_core_percent": 99.20618488690536,
+        "cpu_seconds_per_audio_second": 0.02464849108367627,
+        "word_errors": 1,
+        "reference_words": 23,
+        "character_errors": 1,
+        "reference_characters": 147,
+        "first_partial_seconds": 0.031898299988824874,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 199.18359375,
+          "private_mib": 180.81640625,
+          "process_peak_working_set_mib": 199.18359375
+        }
+      },
+      {
+        "file": "bn-10100521488104977460.pcm.wav",
+        "reference": "দুটি পয়েন্টের মাঝে দুজন ড্রাইভার এবং তাদের যানের মধ্যে যে চলন ও কথাবার্তা চলে সেই বিদ্যাকেই ট্রাফিক ফ্লো বলে।",
+        "text": "ত্রুটি পয়েন্টের মাঝে দুজন ড্রাইভার এবং তাদের যানের মধ্যে যে চলন ও কথাবার্তা চলে সেই বিদ্যাকেই ট্রাফিক ফ্লো বলে",
+        "audio_seconds": 10.32,
+        "wall_seconds": 0.29435659997398034,
+        "cpu_seconds": 0.296875,
+        "one_core_percent": 100.85556091701096,
+        "cpu_seconds_per_audio_second": 0.028766957364341084,
+        "word_errors": 1,
+        "reference_words": 19,
+        "character_errors": 3,
+        "reference_characters": 91,
+        "first_partial_seconds": 0.05625359999248758,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 199.1953125,
+          "private_mib": 180.81640625,
+          "process_peak_working_set_mib": 199.1953125
+        }
+      },
+      {
+        "file": "bn-10104859715102207297.pcm.wav",
+        "reference": "পুলিশ সুপার চন্দ্র শেখর সোলঙ্কি জানিয়েছিলেন, অভিযুক্তরা মুখ ঢাকা অবস্থায় আদালতে হাজির হয়েছিল।",
+        "text": "পুলিশ সুপার চন্দ্রশেকর সহসকি জানিয়েছিলেন অভিযুক্তরা মুখ ঢাকা অবস্থায় আদালতে হাজির হয়েছিল",
+        "audio_seconds": 10.56,
+        "wall_seconds": 0.3313616000232287,
+        "cpu_seconds": 0.296875,
+        "one_core_percent": 89.59245729716082,
+        "cpu_seconds_per_audio_second": 0.028113162878787876,
+        "word_errors": 3,
+        "reference_words": 13,
+        "character_errors": 5,
+        "reference_characters": 82,
+        "first_partial_seconds": 0.03544930001953617,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 199.21484375,
+          "private_mib": 180.81640625,
+          "process_peak_working_set_mib": 199.21484375
+        }
+      },
+      {
+        "file": "bn-10112260419298134236.pcm.wav",
+        "reference": "জাপানের পারমানবিক সংস্থার সূত্রে জানা গিয়েছে, প্ল্যান্টটিতে তেজস্ক্রিয় সিজিয়াম এবং আয়োডিন চিহ্নিত করা হয়েছে।",
+        "text": "জাপানের পার্মানবিক সংস্থার সূত্রে জানা গিয়েছে লান্টিতে তেজস্ক্রিয় সিজি এম এবং আয়োডিন চিহ্নিত করা হয়েছে",
+        "audio_seconds": 10.38,
+        "wall_seconds": 0.28488689998630434,
+        "cpu_seconds": 0.28125,
+        "one_core_percent": 98.72338812824346,
+        "cpu_seconds_per_audio_second": 0.02709537572254335,
+        "word_errors": 4,
+        "reference_words": 14,
+        "character_errors": 9,
+        "reference_characters": 98,
+        "first_partial_seconds": 0.0365921999909915,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 199.22265625,
+          "private_mib": 180.81640625,
+          "process_peak_working_set_mib": 199.22265625
+        }
+      },
+      {
+        "file": "bn-10113993134008827381.pcm.wav",
+        "reference": "বার্সেলোনার সরকারী ভাষা হলো কাতালান এবং স্প্যানিশ। প্রায় অর্ধেক জনগোষ্ঠী কাতালান ভাষায় কথা বলে থাকে, বহু সংখ্যক মানুষ এই ভাষা বোঝে এবং কার্যত সবাই স্প্যানিশ ভাষা জানে।",
+        "text": "বার্সেলোনার সরকারি ভাষা হল কাতালান এবং স্প্যানিশ প্রায় অর্ধেক জনগোষ্ঠী কাতালান ভাষায় কথা বলে থাকে বহুসংখ্যক মানুষ এই ভাষা বোঝে এবং কার্যত সবাই স্প্যানিশ ভাষা জানে",
+        "audio_seconds": 15.9,
+        "wall_seconds": 0.43643359997076914,
+        "cpu_seconds": 0.4375,
+        "one_core_percent": 100.24434416353422,
+        "cpu_seconds_per_audio_second": 0.027515723270440252,
+        "word_errors": 4,
+        "reference_words": 27,
+        "character_errors": 2,
+        "reference_characters": 140,
+        "first_partial_seconds": 0.03847579995635897,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 200.22265625,
+          "private_mib": 181.79296875,
+          "process_peak_working_set_mib": 200.22265625
+        }
+      },
+      {
+        "file": "bn-10133515389098801664.pcm.wav",
+        "reference": "আনুষ্ঠানিকভাবে ফকল্যান্ডস এর মুদ্রা হল ফকল্যান্ড পাউন্ড (এফকেপি) যার মান 1 ব্রিটিশ পাউন্ড (জিবিপি) এর সমান।",
+        "text": "আনুষ্ঠানিকভাবে ফোকল্যান্ডস এর মুদ্রা হল ফোকল্যান্ড পাউন্ড এফ কে পি জার্মান এক ব্রিটিশ পাউন্ড যে বিপি এর সমান",
+        "audio_seconds": 13.56,
+        "wall_seconds": 0.3464263000059873,
+        "cpu_seconds": 0.34375,
+        "one_core_percent": 99.2274547267511,
+        "cpu_seconds_per_audio_second": 0.025350294985250738,
+        "word_errors": 9,
+        "reference_words": 16,
+        "character_errors": 8,
+        "reference_characters": 87,
+        "first_partial_seconds": 0.03591859998414293,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 200.24609375,
+          "private_mib": 181.79296875,
+          "process_peak_working_set_mib": 200.24609375
+        }
+      },
+      {
+        "file": "bn-10160569019855782399.pcm.wav",
+        "reference": "তিনি আরো যোগ করেন \"যা তাদের উন্নয়নের স্তর, দায়িত্ব,  এবং সক্ষমতার সীমা ছাড়িয়ে যায় সেইসব বিষয়ে তাদের বাধ্য করা উচিৎ না।\"",
+        "text": "তিনি আরও যজ্ঞ করেন যা তাদের উন্নয়নের স্তর দায়িত্ব এবং সক্ষমতার সীমা ছাড়িয়ে যায় সেই সব বিষয়ে তাদের বাধ্য করা উচিত না",
+        "audio_seconds": 13.8,
+        "wall_seconds": 0.3655640000361018,
+        "cpu_seconds": 0.375,
+        "one_core_percent": 102.58121695871758,
+        "cpu_seconds_per_audio_second": 0.02717391304347826,
+        "word_errors": 5,
+        "reference_words": 21,
+        "character_errors": 5,
+        "reference_characters": 99,
+        "first_partial_seconds": 0.034119200019631535,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 200.26171875,
+          "private_mib": 181.79296875,
+          "process_peak_working_set_mib": 200.26171875
+        }
+      },
+      {
+        "file": "bn-10173214416112429222.pcm.wav",
+        "reference": "যদিও এখনও পর্যন্ত পরীক্ষামূলক ভাবে একটি ভ্যাকসিন ইবোলা মৃত্যুর হার হ্রাস করতে সক্ষম হয়েছে, তবে উপস্থিত সংক্রমণের চিকিৎসার জন্য উপযুক্ত কোন ওষুধ ভালোভাবে প্রকাশ হয়নি।",
+        "text": "যদিও এখনো পর্যন্ত পরীক্ষামূলকভাবে একটি ভ্যাকসিন ইভেল মৃত্যুর হার হ্রাস করতে সক্ষম হয়েছে তবে উপস্থিত সংক্রমণের চিকিৎসার জন্য উপযুক্ত কোনো ওষুধ ভালো ভাবে প্রকাশ হয়নি",
+        "audio_seconds": 18.54,
+        "wall_seconds": 0.45809649996226653,
+        "cpu_seconds": 0.453125,
+        "one_core_percent": 98.91474831991162,
+        "cpu_seconds_per_audio_second": 0.02444039913700108,
+        "word_errors": 7,
+        "reference_words": 25,
+        "character_errors": 5,
+        "reference_characters": 141,
+        "first_partial_seconds": 0.038563799986150116,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 201.4140625,
+          "private_mib": 182.93359375,
+          "process_peak_working_set_mib": 202.52734375
+        }
+      },
+      {
+        "file": "bn-10178783284625915846.pcm.wav",
+        "reference": "সুন্দরবনকে ইউনেস্কোর ওয়ার্ল্ড হেরিটেজ সাইট হিসাবে ঘোষণা করা হয়েছে। ভারতীয় ভূখণ্ডের মধ্যে থাকা বনের অংশটিকে সুন্দরবন জাতীয় উদ্যান বলা হয়।",
+        "text": "সুন্দরবনকে ইউনেস্কার ওয়ার্ল্ড হ্যারিটেসাইড হিসেবে ঘোষণা করা হয়েছে ভারতীয় ভূখণ্ডের মধ্যে থাকা বোনের অংশটিকে সুন্দরবন জাতীয় উদ্যান বলা হয়",
+        "audio_seconds": 11.7,
+        "wall_seconds": 0.32362260000081733,
+        "cpu_seconds": 0.328125,
+        "one_core_percent": 101.39125017819252,
+        "cpu_seconds_per_audio_second": 0.028044871794871796,
+        "word_errors": 5,
+        "reference_words": 20,
+        "character_errors": 8,
+        "reference_characters": 120,
+        "first_partial_seconds": 0.06058099999791011,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 200.2890625,
+          "private_mib": 181.79296875,
+          "process_peak_working_set_mib": 202.52734375
+        }
+      },
+      {
+        "file": "bn-10194840128263752403.pcm.wav",
+        "reference": "আপনি যদি শুধুমাত্র শিপবোর্ডে করে উপকূলে যান তবে সেক্ষেত্রে আপনার আলাদা করে ভিসা লাগবে না (2009 অনুযায়ী)।",
+        "text": "আপনি যদি শুধুমাত্র শিবডে করে উপকূলে যান তবে সেক্ষেত্রে আপনার আলাদা করে বিশাল লাগবে না দুই হাজার নয় অনুযায়ী",
+        "audio_seconds": 11.58,
+        "wall_seconds": 0.2821043999865651,
+        "cpu_seconds": 0.28125,
+        "one_core_percent": 99.69713340642478,
+        "cpu_seconds_per_audio_second": 0.024287564766839378,
+        "word_errors": 5,
+        "reference_words": 17,
+        "character_errors": 18,
+        "reference_characters": 86,
+        "first_partial_seconds": 0.031870000006165355,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 200.30078125,
+          "private_mib": 181.79296875,
+          "process_peak_working_set_mib": 202.52734375
+        }
+      }
+    ],
+    "sherpa_version": "1.13.8",
+    "load_seconds": 0.6095894000027329,
+    "load_cpu_seconds": 0.578125,
+    "loaded_memory": {
+      "working_set_mib": 186.42578125,
+      "private_mib": 162.734375,
+      "process_peak_working_set_mib": 187.41015625
+    },
+    "model_sha256": {
+      "decoder.onnx": "fc03e8ca154593b95748198a56de115d4e6048d97c41692f93dfefb05f3693b4",
+      "encoder.onnx": "779f2412d6fa56f76be9fe71349cdf3edd10434ae9b1fc5e49834fb904320516",
+      "joiner.onnx": "1df7319f4f9c36d7130cacaf629e1d52e904070e7a14bca9d4f209edeb162da6",
+      "tokens.txt": "6f3a4d64d7da07e7dd7f3fd679e07607be3ec149d1b807726dbb8bbcc80a9fe1"
+    },
+    "aggregate_wer": 0.22127659574468084,
+    "aggregate_cer": 0.058365758754863814,
+    "warm_memory": {
+      "working_set_mib": 200.30078125,
+      "private_mib": 181.79296875,
+      "process_peak_working_set_mib": 202.52734375
+    },
+    "loaded_idle": {
+      "seconds": 5.000537500018254,
+      "one_core_percent": 0.0,
+      "working_set_mib": 200.30078125,
+      "private_mib": 181.79296875,
+      "process_peak_working_set_mib": 202.52734375
+    },
+    "peak_working_set_mib": 202.52734375
+  },
+  "accuracy_google": {
+    "engine": "google",
+    "method": "greedy_search",
+    "threads": 1,
+    "realtime_replay": false,
+    "machine": "AMD64",
+    "logical_cpus": 24,
+    "baseline_memory": {
+      "working_set_mib": 42.0,
+      "private_mib": 24.7890625,
+      "process_peak_working_set_mib": 42.0
+    },
+    "samples": [
+      {
+        "file": "bn-10012315972427481934.pcm.wav",
+        "reference": "জার্মানির অনেক বেক করা খাবারগুলিতে বাদাম, হ্যাজনেলট এবং অন্যান্য বাদামের উপাদান পাওয়া যায়। পছন্দের কেকগুলি প্রায়শই একটি কাপ ভরা কফির সাথে ভাল মানায়।",
+        "text": "জার্মানির অনেক বেক করা খাবার গুলিতে বাদাম হেলথ এবং অন্যান্য বাদামের উপাদান পাওয়া যায় পছন্দের কেক গুলি প্রায়সই একটি কাঠ ভরা কফির সাথে ভালো মানায়",
+        "audio_seconds": 16.2,
+        "wall_seconds": 4.262387700029649,
+        "cpu_seconds": 0.03125,
+        "one_core_percent": 0.7331571456951845,
+        "cpu_seconds_per_audio_second": 0.0019290123456790125,
+        "word_errors": 8,
+        "reference_words": 23,
+        "character_errors": 9,
+        "reference_characters": 127,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.9765625,
+          "private_mib": 27.15234375,
+          "process_peak_working_set_mib": 49.32421875
+        }
+      },
+      {
+        "file": "bn-10025278611427771211.pcm.wav",
+        "reference": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কী-বোর্ড কীরকম হবে।",
+        "text": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কিবোর্ড কিরকম হবে",
+        "audio_seconds": 10.44,
+        "wall_seconds": 2.2218868999625556,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 3,
+        "reference_words": 17,
+        "character_errors": 2,
+        "reference_characters": 67,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.46484375,
+          "private_mib": 26.63671875,
+          "process_peak_working_set_mib": 49.32421875
+        }
+      },
+      {
+        "file": "bn-10059008353469041076.pcm.wav",
+        "reference": "হাইতিয়ান ইনস্টিটিউট ফর জাস্টিস অ্যান্ড ডেমোক্রেসি এর স্বতন্ত্র সমীক্ষাতে উল্লেখ করা হয়েছে যে নেপালি জাতিসংঘের শান্তিরক্ষা বাহিনী অজান্তেই হাইতিতে এই রোগটি নিয়ে এসেছিল।",
+        "text": "হাইতিয়ান ইনস্টিটিউট ফর জাস্টিস এন্ড ডেমোক্রেসি এর স্বতন্ত্র সমীক্ষাতে উল্লেখ করা হয়েছে যে নেপালি জাতিসংঘের শান্তিরক্ষা বাহিনী অজান্তেই হাইতিতে এই রোগটি নিয়ে এসেছিল",
+        "audio_seconds": 14.58,
+        "wall_seconds": 4.627289299969561,
+        "cpu_seconds": 0.03125,
+        "one_core_percent": 0.6753413926422445,
+        "cpu_seconds_per_audio_second": 0.0021433470507544582,
+        "word_errors": 1,
+        "reference_words": 23,
+        "character_errors": 4,
+        "reference_characters": 147,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.8515625,
+          "private_mib": 27.0234375,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10100521488104977460.pcm.wav",
+        "reference": "দুটি পয়েন্টের মাঝে দুজন ড্রাইভার এবং তাদের যানের মধ্যে যে চলন ও কথাবার্তা চলে সেই বিদ্যাকেই ট্রাফিক ফ্লো বলে।",
+        "text": "টুটি পয়েন্ট এর মাঝে দুজন ড্রাইভার এবং তাদের জানের মধ্যে যে চলন ও কথাবার্তা চলে সেই বিদ্যাকে ট্রাফিক ফ্লো বলে",
+        "audio_seconds": 10.32,
+        "wall_seconds": 3.2220461000106297,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 5,
+        "reference_words": 19,
+        "character_errors": 4,
+        "reference_characters": 91,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.890625,
+          "private_mib": 27.0625,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10104859715102207297.pcm.wav",
+        "reference": "পুলিশ সুপার চন্দ্র শেখর সোলঙ্কি জানিয়েছিলেন, অভিযুক্তরা মুখ ঢাকা অবস্থায় আদালতে হাজির হয়েছিল।",
+        "text": "পুলিশ সুপার চন্দ্রশেখর সহজ কি জানিয়েছিলেন অভিযুক্তরা মুখ ঢাকা অবস্থায় আদালতে হাজির হয়েছিল",
+        "audio_seconds": 10.56,
+        "wall_seconds": 2.299515800026711,
+        "cpu_seconds": 0.015625,
+        "one_core_percent": 0.6794908736795156,
+        "cpu_seconds_per_audio_second": 0.0014796401515151515,
+        "word_errors": 3,
+        "reference_words": 13,
+        "character_errors": 4,
+        "reference_characters": 82,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.49609375,
+          "private_mib": 26.66796875,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10112260419298134236.pcm.wav",
+        "reference": "জাপানের পারমানবিক সংস্থার সূত্রে জানা গিয়েছে, প্ল্যান্টটিতে তেজস্ক্রিয় সিজিয়াম এবং আয়োডিন চিহ্নিত করা হয়েছে।",
+        "text": "জাপানের পারমাণবিক সংস্থার সূত্রে জানা গিয়েছে প্লান্টে তেজস্ক্রিয় সিজিয়াম এবং আয়োডিন চিহ্নিত করা হয়েছে",
+        "audio_seconds": 10.38,
+        "wall_seconds": 2.4363398000132293,
+        "cpu_seconds": 0.03125,
+        "one_core_percent": 1.282661802751419,
+        "cpu_seconds_per_audio_second": 0.0030105973025048166,
+        "word_errors": 2,
+        "reference_words": 14,
+        "character_errors": 6,
+        "reference_characters": 98,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.48046875,
+          "private_mib": 26.65234375,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10113993134008827381.pcm.wav",
+        "reference": "বার্সেলোনার সরকারী ভাষা হলো কাতালান এবং স্প্যানিশ। প্রায় অর্ধেক জনগোষ্ঠী কাতালান ভাষায় কথা বলে থাকে, বহু সংখ্যক মানুষ এই ভাষা বোঝে এবং কার্যত সবাই স্প্যানিশ ভাষা জানে।",
+        "text": "বার্সেলোনার সরকারি ভাষা হল কাতালান এবং স্প্যানিশ অর্ধেক জনগোষ্ঠী কাতালান ভাষায় কথা বলে থাকে বহু সংখ্যক মানুষ এই ভাষা বোঝে এবং কার্যত সবাই স্প্যানিশ ভাষা জানে",
+        "audio_seconds": 15.9,
+        "wall_seconds": 3.8181653000065126,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 3,
+        "reference_words": 27,
+        "character_errors": 8,
+        "reference_characters": 140,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.99609375,
+          "private_mib": 27.1640625,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10133515389098801664.pcm.wav",
+        "reference": "আনুষ্ঠানিকভাবে ফকল্যান্ডস এর মুদ্রা হল ফকল্যান্ড পাউন্ড (এফকেপি) যার মান 1 ব্রিটিশ পাউন্ড (জিবিপি) এর সমান।",
+        "text": "আনুষ্ঠানিকভাবে ফকল্যান্ড এর মুদ্রা হলো ফকল্যান্ড ফাউন্ড এফ কে পি জার্মান এক ব্রিটিশ পাউন্ড যে বিপি এর সমান",
+        "audio_seconds": 13.56,
+        "wall_seconds": 3.3246950000175275,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 10,
+        "reference_words": 16,
+        "character_errors": 9,
+        "reference_characters": 87,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 48.9453125,
+          "private_mib": 28.359375,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10160569019855782399.pcm.wav",
+        "reference": "তিনি আরো যোগ করেন \"যা তাদের উন্নয়নের স্তর, দায়িত্ব,  এবং সক্ষমতার সীমা ছাড়িয়ে যায় সেইসব বিষয়ে তাদের বাধ্য করা উচিৎ না।\"",
+        "text": "তিনি আরো যোগ করেন যা তাদের উন্নয়নের স্তর দায়িত্ব এবং সক্ষমতার সীমা ছাড়িয়ে যায় সেইসব বিষয়ে তাদের বাধ্য করা উচিত না",
+        "audio_seconds": 13.8,
+        "wall_seconds": 2.963158399972599,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 1,
+        "reference_words": 21,
+        "character_errors": 1,
+        "reference_characters": 99,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.828125,
+          "private_mib": 26.98046875,
+          "process_peak_working_set_mib": 50.90234375
+        }
+      },
+      {
+        "file": "bn-10173214416112429222.pcm.wav",
+        "reference": "যদিও এখনও পর্যন্ত পরীক্ষামূলক ভাবে একটি ভ্যাকসিন ইবোলা মৃত্যুর হার হ্রাস করতে সক্ষম হয়েছে, তবে উপস্থিত সংক্রমণের চিকিৎসার জন্য উপযুক্ত কোন ওষুধ ভালোভাবে প্রকাশ হয়নি।",
+        "text": "যদিও এখনো পর্যন্ত পরীক্ষামূলকভাবে একটি ভ্যাকসিন এগুলা মৃত্যুর হার হ্রাস করতে সক্ষম হয়েছে তবে উপস্থিত সংক্রমণের চিকিৎসার জন্য উপযুক্ত কোন ঔষধ ভালোভাবে প্রকাশ হয়নি",
+        "audio_seconds": 18.54,
+        "wall_seconds": 4.831080700038001,
+        "cpu_seconds": 0.015625,
+        "one_core_percent": 0.3234265989362814,
+        "cpu_seconds_per_audio_second": 0.00084277238403452,
+        "word_errors": 5,
+        "reference_words": 25,
+        "character_errors": 6,
+        "reference_characters": 141,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 48.2265625,
+          "private_mib": 27.375,
+          "process_peak_working_set_mib": 50.9453125
+        }
+      },
+      {
+        "file": "bn-10178783284625915846.pcm.wav",
+        "reference": "সুন্দরবনকে ইউনেস্কোর ওয়ার্ল্ড হেরিটেজ সাইট হিসাবে ঘোষণা করা হয়েছে। ভারতীয় ভূখণ্ডের মধ্যে থাকা বনের অংশটিকে সুন্দরবন জাতীয় উদ্যান বলা হয়।",
+        "text": "সুন্দরবনকে ইউনেস্কো ওয়ার্ল্ড হেরিটেজ সাইট হিসেবে ঘোষণা করা হয়েছে ভারতীয় ভূখণ্ডের মধ্যে থাকা বোনের অংশটিকে সুন্দরবন জাতীয় উদ্যান বলা হয়",
+        "audio_seconds": 11.7,
+        "wall_seconds": 2.4439556000288576,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 3,
+        "reference_words": 20,
+        "character_errors": 3,
+        "reference_characters": 120,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.59765625,
+          "private_mib": 26.7421875,
+          "process_peak_working_set_mib": 50.9453125
+        }
+      },
+      {
+        "file": "bn-10194840128263752403.pcm.wav",
+        "reference": "আপনি যদি শুধুমাত্র শিপবোর্ডে করে উপকূলে যান তবে সেক্ষেত্রে আপনার আলাদা করে ভিসা লাগবে না (2009 অনুযায়ী)।",
+        "text": "আপনি যদি শুধুমাত্র শিব বটে করে উপকূলে যান তবে সেক্ষেত্রে আপনার আলাদা করে ভিসা লাগবে না 2009 অনুযায়ী",
+        "audio_seconds": 11.58,
+        "wall_seconds": 3.4518316999892704,
+        "cpu_seconds": 0.0,
+        "one_core_percent": 0.0,
+        "cpu_seconds_per_audio_second": 0.0,
+        "word_errors": 2,
+        "reference_words": 17,
+        "character_errors": 5,
+        "reference_characters": 86,
+        "first_partial_seconds": null,
+        "finish_after_audio_seconds": null,
+        "memory": {
+          "working_set_mib": 47.59375,
+          "private_mib": 26.73828125,
+          "process_peak_working_set_mib": 50.9453125
+        }
+      }
+    ],
+    "load_seconds": 0.00020559999393299222,
+    "load_cpu_seconds": 0.0,
+    "loaded_memory": {
+      "working_set_mib": 42.0,
+      "private_mib": 24.7890625,
+      "process_peak_working_set_mib": 42.0
+    },
+    "aggregate_wer": 0.19574468085106383,
+    "aggregate_cer": 0.047470817120622566,
+    "warm_memory": {
+      "working_set_mib": 47.59375,
+      "private_mib": 26.73828125,
+      "process_peak_working_set_mib": 50.9453125
+    },
+    "loaded_idle": {
+      "seconds": 5.000436000002082,
+      "one_core_percent": 0.0,
+      "working_set_mib": 47.59375,
+      "private_mib": 26.73828125,
+      "process_peak_working_set_mib": 50.9453125
+    },
+    "peak_working_set_mib": 50.9453125
+  },
+  "realtime_sherpa": {
+    "engine": "sherpa",
+    "method": "greedy_search",
+    "threads": 1,
+    "realtime_replay": true,
+    "machine": "AMD64",
+    "logical_cpus": 24,
+    "baseline_memory": {
+      "working_set_mib": 41.9453125,
+      "private_mib": 24.7578125,
+      "process_peak_working_set_mib": 41.9453125
+    },
+    "samples": [
+      {
+        "file": "bn-10012315972427481934.pcm.wav",
+        "reference": "জার্মানির অনেক বেক করা খাবারগুলিতে বাদাম, হ্যাজনেলট এবং অন্যান্য বাদামের উপাদান পাওয়া যায়। পছন্দের কেকগুলি প্রায়শই একটি কাপ ভরা কফির সাথে ভাল মানায়।",
+        "text": "জার্মানির অনেক বেক করা খাবারগুলিতে বাদাম হ্যাজন এবং অন্যান্য বাদামের উপাদান পাওয়া যায় পছন্দের কেকগুলি প্রায়শই একটি কাঠ ভেড়া কফির সাথে ভালো বানায়",
+        "audio_seconds": 16.2,
+        "wall_seconds": 16.217408400028944,
+        "cpu_seconds": 0.484375,
+        "one_core_percent": 2.986759586070087,
+        "cpu_seconds_per_audio_second": 0.029899691358024692,
+        "word_errors": 5,
+        "reference_words": 23,
+        "character_errors": 9,
+        "reference_characters": 127,
+        "first_partial_seconds": 1.5188204000005499,
+        "finish_after_audio_seconds": 0.017408400028944726,
+        "memory": {
+          "working_set_mib": 196.59765625,
+          "private_mib": 178.1953125,
+          "process_peak_working_set_mib": 196.59765625
+        }
+      },
+      {
+        "file": "bn-10025278611427771211.pcm.wav",
+        "reference": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কী-বোর্ড কীরকম হবে।",
+        "text": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কি বোর্ড কি রকম হবে",
+        "audio_seconds": 10.44,
+        "wall_seconds": 10.441393900022376,
+        "cpu_seconds": 0.265625,
+        "one_core_percent": 2.5439611084821805,
+        "cpu_seconds_per_audio_second": 0.02544300766283525,
+        "word_errors": 3,
+        "reference_words": 17,
+        "character_errors": 2,
+        "reference_characters": 67,
+        "first_partial_seconds": 1.5164286000072025,
+        "finish_after_audio_seconds": 0.001393900022376826,
+        "memory": {
+          "working_set_mib": 197.89453125,
+          "private_mib": 179.4765625,
+          "process_peak_working_set_mib": 197.8984375
+        }
+      },
+      {
+        "file": "bn-10059008353469041076.pcm.wav",
+        "reference": "হাইতিয়ান ইনস্টিটিউট ফর জাস্টিস অ্যান্ড ডেমোক্রেসি এর স্বতন্ত্র সমীক্ষাতে উল্লেখ করা হয়েছে যে নেপালি জাতিসংঘের শান্তিরক্ষা বাহিনী অজান্তেই হাইতিতে এই রোগটি নিয়ে এসেছিল।",
+        "text": "হাইথিয়ান ইনস্টিটিউট ফর জাস্টিস অ্যান্ড ডেমোক্রেসি এর স্বতন্ত্র সমীক্ষাতে উল্লেখ করা হয়েছে যে নেপালি জাতিসংঘের শান্তিরক্ষা বাহিনী অজান্তেই হাইতিতে এই রোগটি নিয়ে এসেছিল",
+        "audio_seconds": 14.58,
+        "wall_seconds": 14.597115999960806,
+        "cpu_seconds": 0.5,
+        "one_core_percent": 3.425334155057359,
+        "cpu_seconds_per_audio_second": 0.03429355281207133,
+        "word_errors": 1,
+        "reference_words": 23,
+        "character_errors": 1,
+        "reference_characters": 147,
+        "first_partial_seconds": 1.516897199966479,
+        "finish_after_audio_seconds": 0.01711599996080615,
+        "memory": {
+          "working_set_mib": 197.9140625,
+          "private_mib": 179.4765625,
+          "process_peak_working_set_mib": 197.9140625
+        }
+      }
+    ],
+    "sherpa_version": "1.13.8",
+    "load_seconds": 0.6326283999951556,
+    "load_cpu_seconds": 0.609375,
+    "loaded_memory": {
+      "working_set_mib": 184.87890625,
+      "private_mib": 161.109375,
+      "process_peak_working_set_mib": 185.86328125
+    },
+    "model_sha256": {
+      "decoder.onnx": "fc03e8ca154593b95748198a56de115d4e6048d97c41692f93dfefb05f3693b4",
+      "encoder.onnx": "779f2412d6fa56f76be9fe71349cdf3edd10434ae9b1fc5e49834fb904320516",
+      "joiner.onnx": "1df7319f4f9c36d7130cacaf629e1d52e904070e7a14bca9d4f209edeb162da6",
+      "tokens.txt": "6f3a4d64d7da07e7dd7f3fd679e07607be3ec149d1b807726dbb8bbcc80a9fe1"
+    },
+    "aggregate_wer": 0.14285714285714285,
+    "aggregate_cer": 0.03519061583577713,
+    "warm_memory": {
+      "working_set_mib": 197.9140625,
+      "private_mib": 179.4765625,
+      "process_peak_working_set_mib": 197.9140625
+    },
+    "loaded_idle": {
+      "seconds": 5.000282200053334,
+      "one_core_percent": 0.0,
+      "working_set_mib": 197.9140625,
+      "private_mib": 179.4765625,
+      "process_peak_working_set_mib": 197.91796875
+    },
+    "peak_working_set_mib": 197.91796875
+  },
+  "source_ui": {
+    "google_idle_before": {
+      "one_core_percent": 1.2452623247770886,
+      "working_set_mib": 135.13671875,
+      "private_mib": 81.3515625,
+      "process_peak_working_set_mib": 144.87109375
+    },
+    "first_preview_seconds": 1.5007762999739498,
+    "preview_memory": {
+      "working_set_mib": 325.87890625,
+      "private_mib": 282.91015625,
+      "process_peak_working_set_mib": 325.87890625
+    },
+    "result": "একজন শুধুমাত্র আশ্চর্য হতে পারে এই ভেবে যে যখন নতুন কিছু আসে তখন কি বোর্ড কি রকম হবে",
+    "finish_to_text_seconds": 0.024810099974274635,
+    "recording_one_core_percent_including_load_and_vad": 15.661291967807934,
+    "sherpa_idle_loaded": {
+      "one_core_percent": 0.3114445083334909,
+      "working_set_mib": 329.72265625,
+      "private_mib": 286.7265625,
+      "process_peak_working_set_mib": 332.09765625
+    },
+    "warm_recording_one_core_percent_with_vad": 6.5933089390239275,
+    "warm_finish_to_text_seconds": 0.05048229999374598,
+    "google_idle_after_unload": {
+      "one_core_percent": 0.6247353121420745,
+      "working_set_mib": 200.9921875,
+      "private_mib": 151.99609375,
+      "process_peak_working_set_mib": 332.8125
+    },
+    "cancel_seconds": 0.0,
+    "memory_after_second_cycle": {
+      "working_set_mib": 201.3515625,
+      "private_mib": 154.09765625,
+      "process_peak_working_set_mib": 332.8125
+    },
+    "passed": true,
+    "live_microphone": false,
+    "auto_type": false,
+    "scope": "actual source Qt app in smoke mode, fixture capture, no native keyboard hook"
+  },
+  "limits": [
+    "No live microphone testing",
+    "No low-end-PC certification",
+    "WER includes compound-word spacing and spelling variants; no custom equivalence mapping",
+    "Standalone final timing excludes app pause threshold; UI timings are separately recorded",
+    "Initial unbounded-BLAS profiling and whole-file hash allocation were corrected to match main.py; only corrected reports included"
+  ]
+}

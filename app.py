@@ -51,7 +51,7 @@ from keyboard_engine import LAYOUTS, KeyboardEngine, to_ansi
 from keyboard_hook import KeyboardHook
 from theme import paint_glass, round_window, style_sheet
 from tools_ui import KeyboardTools
-from voice import LoopbackRecorder, PauseMonitor, Recognizer, Recorder, list_microphones
+from voice import SHERPA_MODEL, LoopbackRecorder, PauseMonitor, Recognizer, Recorder, SherpaSession, list_microphones
 from windows import foreground_target, insert_text, key_down, set_glass_blur
 
 ASSETS = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent)) / "assets"
@@ -129,6 +129,7 @@ class JoyWindow(QMainWindow):
         self.pause_monitor = None
         self.early_speech = None
         self.early_attempted = False
+        self.stream_speech = None
         self.job = None
         self.cancel_event = threading.Event()
         self.generation = 0
@@ -248,6 +249,7 @@ class JoyWindow(QMainWindow):
         self.engine = QComboBox()
         self.engine.addItem("Google web  ·  online, no key", "google")
         self.engine.addItem("Whisper  ·  offline, no key", "offline")
+        self.engine.addItem("Sherpa Bangla  ·  experimental, offline live", "sherpa")
         self.engine.setCurrentIndex(self.engine.findData(self.settings["engine"]))
         self.engine.setAccessibleName("Speech recognition engine")
         controls.addWidget(self.engine)
@@ -368,7 +370,8 @@ class JoyWindow(QMainWindow):
         self.prepare_btn = button("Download offline model", self.prepare_model)
         row.addWidget(self.prepare_btn)
         layout.addLayout(row)
-        layout.addWidget(label("Download Tiny, Base or Small once to use offline voice. After download, local mode needs no internet, API key or GPU. Online voice works immediately with internet. Offline Bangla accuracy was poor in our sample checks; use online recognition for Bangla.", "muted", True))
+        self.model_note = label("", "muted", True)
+        layout.addWidget(self.model_note)
         layout.addWidget(label("Appearance & startup", "eyebrow"))
         theme_row = QHBoxLayout()
         theme_row.addWidget(label("Theme"))
@@ -788,7 +791,23 @@ class JoyWindow(QMainWindow):
             self.message.setText(str(exc))
 
     def update_engine(self):
-        offline = self.engine.currentData() == "offline"
+        engine = self.engine.currentData()
+        if self.job is None and self.recorder is None:
+            self.recognizer.unload_models(engine)
+        sherpa = engine == "sherpa"
+        self.model.setVisible(not sherpa)
+        self.prepare_btn.setText("Prepare Sherpa Bangla (~90 MiB)" if sherpa else "Download offline model")
+        self.model_note.setText(
+            "Experimental Bangla streaming. Downloads once; no internet, account, API key or GPU needed afterwards. "
+            "Live preview appears while listening; final text is typed when you finish. In 12 test clips: Sherpa 22.1% word errors, "
+            "Google 19.6%. Switching engines releases the loaded model."
+            if sherpa else "Download Tiny, Base or Small once to use offline voice. Offline Whisper Bangla was unreliable in sample checks; online recognition is recommended."
+        )
+        if sherpa:
+            ready = self.recognizer.model_ready(SHERPA_MODEL)
+            self.engine_note.setText("Experimental, Bangla only. " + ("Model ready. Live preview; final text on finish." if ready else "Download the model in Preferences first."))
+            return
+        offline = engine == "offline"
         ready = self.recognizer.model_ready(self.model.currentData())
         note = ("Local audio processing. Model ready." if ready else "Prepare a model in Preferences before recording.") if offline else "Free personal/testing access. Audio sent to Google; internet required."
         if offline and self.language.currentData() == "bn-BD":
@@ -814,6 +833,7 @@ class JoyWindow(QMainWindow):
     def _idle(self):
         self.stop_pause_monitor()
         self.early_speech = None
+        self.stream_speech = None
         self.record_btn.setEnabled(True)
         self.record_btn.setText("●  Start recording")
         self.cancel_btn.setEnabled(False)
@@ -834,7 +854,12 @@ class JoyWindow(QMainWindow):
             self.start_recording()
 
     def start_recording(self):
-        if self.engine.currentData() == "offline" and not self.recognizer.model_ready(self.model.currentData()):
+        engine = self.engine.currentData()
+        if engine == "sherpa" and self.language.currentData() != "bn-BD":
+            self.set_status("Choose Bengali", "Experimental Sherpa supports Bangla only. Choose Bengali or another engine.", True)
+            return
+        selected_model = SHERPA_MODEL if engine == "sherpa" else self.model.currentData()
+        if engine in ("offline", "sherpa") and not self.recognizer.model_ready(selected_model):
             self.set_status("Prepare offline model", "Open Preferences and download a model first.", True)
             return
         self.generation += 1
@@ -862,6 +887,10 @@ class JoyWindow(QMainWindow):
             self.pause_monitor = PauseMonitor(self.recorder)
             self.pause_monitor.start()
         self.set_status("Listening…", f"Pause for about {PauseMonitor.PAUSE_SECONDS:g} seconds to finish automatically, or press {self.settings['voice_shortcut']} again to stop and transcribe." if self.auto_pause.isChecked() else f"Press {self.settings['voice_shortcut']} again to stop and transcribe. Cancel discards recording.")
+        if engine == "sherpa":
+            token = self.generation
+            self.stream_speech = SherpaSession(self.recognizer, self.recorder, self.cancel_event)
+            self.start_job(self.stream_speech.run, lambda text: self.receive_text(token, text))
 
     def stop_pause_monitor(self):
         monitor, self.pause_monitor = self.pause_monitor, None
@@ -876,6 +905,10 @@ class JoyWindow(QMainWindow):
         try:
             audio, rate = recorder.stop()
         except Exception as exc:
+            if self.stream_speech is not None:
+                self.cancel_event.set()
+                self.set_status("Recording failed", str(exc), True)
+                return
             self._idle()
             self.set_status("Recording failed", str(exc), True)
             return
@@ -884,6 +917,10 @@ class JoyWindow(QMainWindow):
         language, engine, model = self.language.currentData(), self.engine.currentData(), self.model.currentData()
         self.record_btn.setEnabled(False)
         self.set_status("Transcribing…", "You can cancel; results from cancelled work will never be typed.")
+        if self.stream_speech is not None:
+            self.stream_speech.finish(audio, rate)
+            self.compact.sync_controls()
+            return
         self.start_job(lambda status: self.recognizer.transcribe(audio, rate, language, engine, model, status=status, cancel_event=self.cancel_event, early=early),
                        lambda text: self.receive_text(token, text))
 
@@ -898,7 +935,7 @@ class JoyWindow(QMainWindow):
 
     def show_progress(self, message):
         self.message.setText(message)
-        self.compact.set_status("Working…", message)
+        self.compact.set_status("Listening…" if self.recorder is not None else "Working…", message)
 
     def receive_text(self, token, text):
         if token != self.generation or self.cancel_event.is_set():
@@ -933,6 +970,13 @@ class JoyWindow(QMainWindow):
 
     def job_error(self, message):
         if not self.cancel_event.is_set():
+            if self.stream_speech is not None and self.recorder is not None:
+                recorder, self.recorder = self.recorder, None
+                self.stop_pause_monitor()
+                try:
+                    recorder.cancel()
+                except RuntimeError:
+                    pass
             self.set_status("Needs attention", message, True)
 
     def job_finished(self):
@@ -941,7 +985,7 @@ class JoyWindow(QMainWindow):
             job.deleteLater()
         self._idle()
         self.update_engine()
-        if self.cancel_event.is_set():
+        if self.cancel_event.is_set() and self.state.text() != "Recording failed":
             self.set_status("Cancelled", "Recording discarded. Ready for a new session.")
         if self.quitting:
             self.close()
@@ -954,9 +998,10 @@ class JoyWindow(QMainWindow):
         self.record_btn.setEnabled(False)
         self.cancel_btn.setEnabled(True)
         self.set_status("Preparing model…", "Downloading to your local data folder. This can take a few minutes.")
-        model = self.model.currentData()
+        model = SHERPA_MODEL if self.engine.currentData() == "sherpa" else self.model.currentData()
+        destination = "Sherpa Bangla" if model == SHERPA_MODEL else "Whisper"
         self.start_job(lambda status: self.recognizer.prepare_model(model, status=status, cancel_event=self.cancel_event),
-                       lambda _: self.set_status("Offline model ready", "Choose Whisper in Voice studio to use local recognition."))
+                       lambda _: self.set_status("Offline model ready", f"Choose {destination} in Voice studio to use local recognition."))
 
     def cancel(self):
         self.stop_pause_monitor()
@@ -997,7 +1042,8 @@ class JoyWindow(QMainWindow):
             elapsed = time.monotonic() - self.started
             self.clock.setText(f"00:{min(int(elapsed), 60):02d}  /  01:00")
             self.meter.setValue(min(100, int(self.recorder.level * 100)))
-            self.compact.update_recording(elapsed, self.recorder.level)
+            self.compact.update_recording(elapsed, self.recorder.level,
+                                          self.stream_speech.partial if self.stream_speech is not None else None)
             if self.recorder.error:
                 error = self.recorder.error
                 self.cancel()

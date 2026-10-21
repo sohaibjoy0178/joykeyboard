@@ -43,7 +43,7 @@ def check_audio(path: Path, engine: str, output: Path, language="en-US", model="
     path, output = Path(path), Path(output)
     if path.resolve() == output.resolve():
         raise VoiceError("Diagnostic output must differ from the input audio file.")
-    if engine not in ("google", "offline"):
+    if engine not in ("google", "offline", "sherpa"):
         raise VoiceError("Choose google or offline for the diagnostic engine.")
     try:
         if path.stat().st_size > 30_000_000:

@@ -15,7 +15,7 @@ def main():
     parser.add_argument("--smoke-test", metavar="PNG", help="Render UI, save screenshot and exit")
     parser.add_argument("--check-audio", metavar="WAV", help=argparse.SUPPRESS)
     parser.add_argument("--check-output", metavar="JSON", help=argparse.SUPPRESS)
-    parser.add_argument("--check-engine", choices=("google", "offline"), default="offline", help=argparse.SUPPRESS)
+    parser.add_argument("--check-engine", choices=("google", "offline", "sherpa"), default="offline", help=argparse.SUPPRESS)
     parser.add_argument("--check-language", choices=("bn-BD", "en-US"), default="en-US", help=argparse.SUPPRESS)
     parser.add_argument("--check-model", choices=("tiny", "base", "small"), default="base", help=argparse.SUPPRESS)
     parser.add_argument("--check-auto-pause", action="store_true", help=argparse.SUPPRESS)

@@ -599,6 +599,134 @@ def test_missing_offline_model_does_not_start_microphone(window, monkeypatch):
     assert window.state.text() == "Prepare offline model"
 
 
+def test_sherpa_is_optional_experimental_bangla_only_and_needs_model(window, monkeypatch):
+    assert window.engine.currentData() == "google"
+    window.engine.setCurrentIndex(window.engine.findData("sherpa"))
+    assert "Experimental" in window.engine_note.text()
+    assert "22.1%" in window.model_note.text()
+    assert window.model.isHidden()
+    assert "Sherpa" in window.prepare_btn.text()
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: False)
+    window.start_recording()
+    assert window.recorder is None and window.state.text() == "Prepare offline model"
+    window.language.setCurrentIndex(window.language.findData("en-US"))
+    window.start_recording()
+    assert window.recorder is None and window.state.text() == "Choose Bengali"
+
+
+def test_sherpa_prepare_uses_dedicated_model_and_switching_releases_it(window, monkeypatch):
+    from unittest.mock import Mock
+
+    from voice import SHERPA_MODEL
+    window.engine.setCurrentIndex(window.engine.findData("sherpa"))
+    jobs = []
+    monkeypatch.setattr(window, "start_job", lambda function, success: jobs.append(function))
+    prepare = Mock()
+    monkeypatch.setattr(window.recognizer, "prepare_model", prepare)
+    window.prepare_model()
+    jobs[0](None)
+    assert prepare.call_args.args == (SHERPA_MODEL,)
+    window.recognizer._sherpa = object()
+    window._idle()
+    window.engine.setCurrentIndex(window.engine.findData("google"))
+    assert window.recognizer._sherpa is None
+    assert not window.model.isHidden()
+
+
+def test_sherpa_job_runs_during_capture_keeps_stop_enabled_and_commits_once(window, monkeypatch):
+    from voice import VoiceError
+    class Recorder:
+        level, error = .1, None
+        def __init__(self, device=None):
+            pass
+        def start(self):
+            pass
+        def stop(self):
+            return b"complete audio", 16000
+        def cancel(self):
+            pass
+    class Session:
+        partial = ""
+        def __init__(self, owner, recorder, cancel_event):
+            self.done, self.cancelled = threading.Event(), cancel_event
+        def run(self, status):
+            self.partial = "আমি"
+            status("Live preview: আমি")
+            while not self.done.wait(.01):
+                if self.cancelled.is_set():
+                    raise VoiceError("Cancelled.")
+            return "আমি বাংলায় লিখি"
+        def finish(self, pcm, rate):
+            assert pcm == b"complete audio" and rate == 16000
+            self.done.set()
+    monkeypatch.setattr("app.Recorder", Recorder)
+    monkeypatch.setattr("app.SherpaSession", Session)
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: True)
+    window.engine.setCurrentIndex(window.engine.findData("sherpa"))
+    window.start_recording()
+    job = window.job
+    try:
+        for _ in range(100):
+            QTest.qWait(10)
+            if window.stream_speech.partial:
+                break
+        assert window.recorder is not None and window.job is job
+        assert window.compact.record.text() == "Stop" and window.compact.record.isEnabled()
+        assert not window.transcript.toPlainText()
+        window.toggle_record()
+        assert window.recorder is None and window.job is job
+        for _ in range(100):
+            QTest.qWait(10)
+            if window.job is None:
+                break
+        assert window.job is None and window.transcript.toPlainText() == "আমি বাংলায় লিখি"
+    finally:
+        window.cancel()
+        while window.job is not None:
+            QTest.qWait(10)
+
+
+def test_sherpa_loading_failure_stops_capture_and_preserves_error(window, monkeypatch):
+    cancelled = []
+    class Recorder:
+        def __init__(self, device=None):
+            pass
+        def start(self):
+            pass
+        def cancel(self):
+            cancelled.append(True)
+    class Session:
+        def __init__(self, *args):
+            pass
+        def run(self, status):
+            raise RuntimeError("model could not load")
+    monkeypatch.setattr("app.Recorder", Recorder)
+    monkeypatch.setattr("app.SherpaSession", Session)
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: True)
+    window.engine.setCurrentIndex(window.engine.findData("sherpa"))
+    window.start_recording()
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.job is None:
+            break
+    assert window.job is None and window.recorder is None and cancelled == [True]
+    assert window.state.text() == "Needs attention"
+    assert window.message.text() == "model could not load"
+
+
+@pytest.mark.parametrize("theme", ["light", "dark"])
+def test_live_preview_is_elided_without_growing_bar(window, qt_app, theme):
+    window.theme_choice.setCurrentIndex(window.theme_choice.findData(theme))
+    window.show_compact()
+    bar = window.compact
+    bar.set_status("Listening…")
+    bar.update_recording(2, .2, "বাংলা লাইভ প্রিভিউ " * 40)
+    qt_app.processEvents()
+    assert bar.width() == 384 and bar.height() <= 85
+    assert "Live preview:" in bar.status.toolTip()
+    assert len(bar.status.text()) < 200
+
+
 def test_output_encoding_reaches_hook_and_voice_but_not_reviewed_tools(window, monkeypatch):
     from keyboard_engine import to_ansi
     calls = []

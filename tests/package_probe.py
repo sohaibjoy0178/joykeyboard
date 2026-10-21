@@ -112,7 +112,7 @@ def probe():
     assert paused["early_recognition_started"]
     assert not (directory / "user-data" / "JoyKeyboard" / "models").exists()
     sys.path.insert(0, str(ROOT))
-    from voice import Recognizer
+    from voice import SHERPA_MODEL, Recognizer
     # Exercise the same explicit download path as Preferences, then use it in the EXE.
     cache = directory / "user-data/JoyKeyboard/models"
     client = Recognizer(cache, bundled_dir=directory / "no-bundle")
@@ -123,6 +123,13 @@ def probe():
                                    "--check-output", str(english), "--check-model", "tiny"])
     offline = json.loads(english.read_text(encoding="utf-8"))
     assert offline["packaged"] and "country" in offline["transcript"].lower()
+    client.prepare_model(SHERPA_MODEL)
+    sherpa = ROOT / "artifacts/standalone-sherpa-bengali.json"
+    run("offline-streaming-sherpa-bengali", ["--check-audio", str(ROOT / "artifacts/bn-10025278611427771211.pcm.wav"),
+                                            "--check-output", str(sherpa), "--check-engine", "sherpa",
+                                            "--check-language", "bn-BD"])
+    live = json.loads(sherpa.read_text(encoding="utf-8"))
+    assert live["packaged"] and "আশ্চর্য" in live["transcript"] and "যখন" in live["transcript"]
     normal = subprocess.Popen([str(executable)], cwd=directory, env=environment,
                               creationflags=subprocess.CREATE_NO_WINDOW)
     try:
