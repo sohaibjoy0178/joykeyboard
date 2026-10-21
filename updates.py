@@ -45,7 +45,7 @@ class GitHubRedirects(HTTPRedirectHandler):
 def _open(url):
     request = Request(_trusted_url(url), headers={
         "User-Agent": f"JoyKeyboard/{APP_VERSION}",
-        "Accept": "application/vnd.github+json" if url == API_URL else "application/octet-stream",
+        "Accept": "application/vnd.github+json" if urlsplit(url).hostname == "api.github.com" else "application/octet-stream",
         "X-GitHub-Api-Version": "2026-03-10",
     })
     return build_opener(GitHubRedirects()).open(request, timeout=15)

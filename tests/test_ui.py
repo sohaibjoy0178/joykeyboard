@@ -21,6 +21,7 @@ def window(qt_app, monkeypatch):
     monkeypatch.setattr("app.load_settings", lambda _: ({**DEFAULTS, "theme": "light", "rules": dict(DEFAULT_RULES)}, ""))
     monkeypatch.setattr("app.list_microphones", lambda: [(3, "Test microphone")])
     monkeypatch.setattr("app.key_down", lambda key: False)
+    monkeypatch.setattr("app.model_updates.prepare_update", lambda *args: None)
     class FakePauseMonitor:
         PAUSE_SECONDS = 1.2
         reason = None
@@ -181,6 +182,101 @@ def test_updates_download_on_separate_worker_and_manual_check_works_when_auto_of
     assert window.update_job is None and window.job is voice_job
     assert "up to date" in window.update_status.text() and window.update_check.isEnabled()
     window.job = None
+
+
+def test_sherpa_update_download_keeps_voice_available_and_applies_only_after_voice(window, qt_app, monkeypatch):
+    from types import SimpleNamespace
+    from unittest.mock import Mock
+
+    release = threading.Event()
+    manifest = {"version": 2}
+    def prepare(client, cancel, status):
+        assert release.wait(2)
+        return manifest
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: True)
+    monkeypatch.setattr("app.model_updates.prepare_update", prepare)
+    activate = Mock()
+    monkeypatch.setattr("app.model_updates.activate_update", activate)
+    window.show_compact()
+    window.check_model_updates()
+    assert window.model_update_job is not None and window.job is None
+    assert window.record_btn.isEnabled() and window.compact.record.isEnabled()
+    assert window.compact.width() == 384 and window.compact.height() == 48
+    window.recorder = SimpleNamespace(cancel=lambda: None)
+    release.set()
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.model_update_job is None:
+            break
+    assert window.ready_model_update is manifest
+    activate.assert_not_called()
+    window.recorder = None
+    window._idle()
+    activate.assert_called_once_with(window.recognizer, manifest)
+    assert window.ready_model_update is None and "updated automatically" in window.model_update_status.text()
+
+
+def test_sherpa_check_deferred_during_voice_retries_on_completion(window, qt_app, monkeypatch):
+    from unittest.mock import Mock
+
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: True)
+    prepare = Mock(return_value=None)
+    monkeypatch.setattr("app.model_updates.prepare_update", prepare)
+    window.job = object()
+    window.check_model_updates(manual=True)
+    assert window.model_update_job is None and window.model_update_deferred is True
+    window.job = None
+    window._idle()
+    for _ in range(100):
+        QTest.qWait(10)
+        if prepare.called and window.model_update_job is None:
+            break
+    assert prepare.call_count == 1 and window.model_update_deferred is None
+
+
+def test_sherpa_automatic_off_cancels_download_and_rejects_late_result(window, qt_app, monkeypatch):
+    from unittest.mock import Mock
+
+    def prepare(client, cancel, status):
+        assert cancel.wait(2)
+        return {"version": 2}
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: True)
+    monkeypatch.setattr("app.model_updates.prepare_update", prepare)
+    activate = Mock()
+    monkeypatch.setattr("app.model_updates.activate_update", activate)
+    window.check_model_updates()
+    window.auto_updates.setChecked(False)
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.model_update_job is None:
+            break
+    assert window.model_update_cancel.is_set() and window.model_update_job is None
+    assert window.ready_model_update is None and "off" in window.model_update_status.text()
+    activate.assert_not_called()
+
+
+def test_quit_cancels_sherpa_worker_and_waits_for_finish(window, qt_app, monkeypatch):
+    def prepare(client, cancel, status):
+        assert cancel.wait(2)
+        raise RuntimeError("cancelled")
+    monkeypatch.setattr(window.recognizer, "model_ready", lambda _: True)
+    monkeypatch.setattr("app.model_updates.prepare_update", prepare)
+    window.check_model_updates()
+    assert window.model_update_job is not None
+    window.request_quit()
+    for _ in range(100):
+        QTest.qWait(10)
+        if window.model_update_job is None:
+            break
+    assert window.model_update_job is None and window.model_update_cancel.is_set() and window.quitting
+
+
+def test_sherpa_update_failure_keeps_voice_and_app_update_status(window):
+    before = window.update_status.text(), window.state.text()
+    window.model_update_failed("Network unavailable")
+    assert "current model kept" in window.model_update_status.text()
+    assert (window.update_status.text(), window.state.text()) == before
+    assert window.record_btn.isEnabled() and not window.quitting
 
 
 def test_update_check_failure_is_nonblocking_and_can_retry(window, qt_app, monkeypatch):

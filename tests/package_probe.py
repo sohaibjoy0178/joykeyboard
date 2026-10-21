@@ -130,6 +130,27 @@ def probe():
                                             "--check-language", "bn-BD"])
     live = json.loads(sherpa.read_text(encoding="utf-8"))
     assert live["packaged"] and "আশ্চর্য" in live["transcript"] and "যখন" in live["transcript"]
+    from unittest.mock import patch
+
+    import model_updates
+    from voice import SHERPA_FILES
+
+    # Exercise a future version pointer with the current real weights, without publishing a fake update.
+    candidate = model_updates.baseline_manifest()
+    candidate["version"] = 2
+    staged = model_updates.candidate_path(cache, candidate)
+    staged.mkdir(parents=True)
+    for name in SHERPA_FILES:
+        shutil.copy2(cache / SHERPA_MODEL / name, staged / name)
+    with patch.object(model_updates, "check_channel", return_value=candidate):
+        verified = model_updates.prepare_update(client, None)
+    model_updates.activate_update(client, verified)
+    updated = ROOT / "artifacts/standalone-sherpa-updated-model.json"
+    run("sherpa-updated-model-pointer-offline", ["--check-audio", str(ROOT / "artifacts/bn-10025278611427771211.pcm.wav"),
+                                               "--check-output", str(updated), "--check-engine", "sherpa",
+                                               "--check-language", "bn-BD", "--check-auto-pause"])
+    active = json.loads(updated.read_text(encoding="utf-8"))
+    assert active["packaged"] and active["auto_pause_detected"] and active["transcript"] == live["transcript"]
     normal = subprocess.Popen([str(executable)], cwd=directory, env=environment,
                               creationflags=subprocess.CREATE_NO_WINDOW)
     try:

@@ -1,0 +1,25 @@
+{
+  "schema": 1,
+  "version": 1,
+  "repo": "csukuangfj2/sherpa-onnx-streaming-zipformer-bn-vosk-2026-02-09",
+  "revision": "a7c3c1547450a7c546c876be9ca8a6ab54464423",
+  "minimum_app": "0.4.14",
+  "files": {
+    "encoder.onnx": {
+      "size": 90994145,
+      "sha256": "779f2412d6fa56f76be9fe71349cdf3edd10434ae9b1fc5e49834fb904320516"
+    },
+    "decoder.onnx": {
+      "size": 2093080,
+      "sha256": "fc03e8ca154593b95748198a56de115d4e6048d97c41692f93dfefb05f3693b4"
+    },
+    "joiner.onnx": {
+      "size": 1026462,
+      "sha256": "1df7319f4f9c36d7130cacaf629e1d52e904070e7a14bca9d4f209edeb162da6"
+    },
+    "tokens.txt": {
+      "size": 6252,
+      "sha256": "6f3a4d64d7da07e7dd7f3fd679e07607be3ec149d1b807726dbb8bbcc80a9fe1"
+    }
+  }
+}

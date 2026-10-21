@@ -28,6 +28,19 @@ def test_version_numbers_compare_numerically():
     assert updates.parse_release(release_payload("v0.4.10"), "0.4.9").version == "0.4.10"
 
 
+@pytest.mark.parametrize("url,expected", [
+    (updates.API_URL, "application/vnd.github+json"),
+    ("https://api.github.com/repos/sohaibjoy0178/joykeyboard/contents/assets/models/sherpa-channel.json?ref=main", "application/vnd.github+json"),
+    ("https://github.com/sohaibjoy0178/joykeyboard/releases/download/v0.5.0/JoyKeyboard-Setup.exe", "application/octet-stream"),
+], ids=["release-api", "model-channel-api", "installer"])
+def test_metadata_requests_use_json_and_installer_requests_use_binary(monkeypatch, url, expected):
+    opener = Mock()
+    monkeypatch.setattr(updates, "build_opener", Mock(return_value=opener))
+    updates._open(url)
+    request = opener.open.call_args.args[0]
+    assert request.get_header("Accept") == expected
+
+
 @pytest.mark.parametrize("value", [None, "", "v1", "1.2.3-rc1", "../1.2.3", "1.2.3.4", "1.2.1000000", "1.2.3\n"])
 def test_invalid_versions_rejected(value):
     with pytest.raises(updates.UpdateError):

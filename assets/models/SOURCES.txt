@@ -8,3 +8,4 @@ ONNX export: https://huggingface.co/csukuangfj2/sherpa-onnx-streaming-zipformer-
 Pinned revision: a7c3c1547450a7c546c876be9ca8a6ab54464423
 License: Apache-2.0, SHERPA-LICENSE.txt. Runtime/model CPU use requires no paid service or account.
 Weights are not bundled. Downloaded files are size/SHA-256 checked against voice.SHERPA_FILES.
+Automatic updates use the maintainer-verified sherpa-channel.json manifest with immutable revisions and exact file hashes. Runtime/library updates use normal app releases.

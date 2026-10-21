@@ -32,6 +32,7 @@ from PySide6.QtWidgets import (
     QWidget,
 )
 
+import model_updates
 import startup
 import updates
 from core import (
@@ -141,6 +142,10 @@ class JoyWindow(QMainWindow):
         self.update_cancel = threading.Event()
         self.ready_update = None
         self.update_announced = False
+        self.model_update_job = None
+        self.model_update_cancel = threading.Event()
+        self.ready_model_update = None
+        self.model_update_deferred = None
         self.last_hold = False
         self.started = 0.0
         self.last_text = ""
@@ -372,6 +377,8 @@ class JoyWindow(QMainWindow):
         layout.addLayout(row)
         self.model_note = label("", "muted", True)
         layout.addWidget(self.model_note)
+        self.model_update_status = label("Sherpa model updates use the verified channel. First model download stays optional.", "muted", True)
+        layout.addWidget(self.model_update_status)
         layout.addWidget(label("Appearance & startup", "eyebrow"))
         theme_row = QHBoxLayout()
         theme_row.addWidget(label("Theme"))
@@ -402,13 +409,13 @@ class JoyWindow(QMainWindow):
             self.autostart.setToolTip("Windows startup settings could not be read.")
         self.autostart.toggled.connect(self.change_autostart)
         layout.addWidget(self.autostart)
-        layout.addWidget(label("App updates · Stable channel", "eyebrow"))
-        self.auto_updates = QCheckBox("Check GitHub and download new versions automatically")
+        layout.addWidget(label("Updates · Stable app & Sherpa channel", "eyebrow"))
+        self.auto_updates = QCheckBox("Download app and installed Sherpa model updates automatically")
         self.auto_updates.setChecked(self.settings["auto_updates"])
-        self.auto_updates.setToolTip("Checks after startup and every six hours. Installing always requires your permission.")
+        self.auto_updates.setToolTip("Checks after startup and every six hours. Verified model updates apply between voice sessions. App installation requires your permission.")
         self.auto_updates.toggled.connect(self.change_auto_updates)
         layout.addWidget(self.auto_updates)
-        self.update_status = label(f"Version {APP_VERSION} · Installation always asks permission.", "muted", True)
+        self.update_status = label(f"Version {APP_VERSION} · App installation asks permission.", "muted", True)
         if (data_directory() / "updates/install-error.txt").is_file():
             self.update_status.setText("Previous update did not complete. Check for updates to retry.")
         layout.addWidget(self.update_status)
@@ -505,6 +512,10 @@ class JoyWindow(QMainWindow):
         if not enabled:
             self.update_timer.stop()
             self.update_cancel.set()
+            self.model_update_cancel.set()
+            self.ready_model_update = None
+            self.model_update_deferred = None
+            self.model_update_status.setText("Automatic Sherpa updates off. Use Check for updates to check manually.")
         elif not self.smoke and getattr(sys, "frozen", False):
             self.update_timer.start()
             self.check_updates()
@@ -517,6 +528,7 @@ class JoyWindow(QMainWindow):
             self.check_updates(manual=True)
 
     def check_updates(self, manual=False):
+        self.check_model_updates(manual)
         if self.quitting or self.update_job is not None or (not manual and not self.auto_updates.isChecked()):
             return
         if not manual and self.ready_update is not None:
@@ -539,6 +551,65 @@ class JoyWindow(QMainWindow):
         job.failed.connect(self.update_failed)
         job.finished.connect(self.update_finished)
         job.start()
+
+    def check_model_updates(self, manual=False):
+        if self.quitting or self.model_update_job is not None or self.ready_model_update is not None:
+            return
+        if not manual and not self.auto_updates.isChecked():
+            return
+        if self.recorder is not None or self.job is not None:
+            self.model_update_deferred = manual
+            return  # Voice completion retries deferred model checks.
+        self.model_update_deferred = None
+        if not self.recognizer.model_ready(SHERPA_MODEL):
+            return
+        self.model_update_cancel = threading.Event()
+        cancel = self.model_update_cancel
+        job = Job(lambda status: model_updates.prepare_update(self.recognizer, cancel, status))
+        self.model_update_job = job
+        self.model_update_status.setText("Checking Sherpa model updates…")
+        job.progress.connect(self.model_update_progress)
+        job.result.connect(self.model_update_downloaded)
+        job.failed.connect(self.model_update_failed)
+        job.finished.connect(self.model_update_finished)
+        job.start()
+
+    def model_update_progress(self, message):
+        if not self.quitting and not self.model_update_cancel.is_set():
+            self.model_update_status.setText(message)
+
+    def model_update_downloaded(self, manifest):
+        if self.quitting or self.model_update_cancel.is_set():
+            return
+        if manifest is None:
+            self.model_update_status.setText("Sherpa model is up to date on the verified channel.")
+            return
+        self.ready_model_update = manifest
+        self.model_update_status.setText("Sherpa update verified. Waiting for current voice work to finish…")
+        self.apply_model_update()
+
+    def apply_model_update(self):
+        if self.ready_model_update is None or self.quitting or self.recorder is not None or self.job is not None:
+            return
+        try:
+            model_updates.activate_update(self.recognizer, self.ready_model_update)
+            self.model_update_status.setText(f"Sherpa model {self.ready_model_update['version']} updated automatically. Ready for next recording.")
+            self.ready_model_update = None
+            self.update_engine()
+        except (OSError, ValueError, RuntimeError) as exc:
+            self.ready_model_update = None
+            self.model_update_status.setText(f"Sherpa update not applied; current model kept. {exc}")
+
+    def model_update_failed(self, message):
+        if not self.quitting and not self.model_update_cancel.is_set():
+            self.model_update_status.setText(f"Sherpa update unavailable; current model kept. {message}")
+
+    def model_update_finished(self):
+        job, self.model_update_job = self.model_update_job, None
+        if job:
+            job.deleteLater()
+        if self.quitting:
+            self.close()
 
     def update_progress(self, message):
         if self.quitting or self.update_cancel.is_set():
@@ -582,8 +653,8 @@ class JoyWindow(QMainWindow):
     def install_update(self):
         if self.ready_update is None or self.quitting:
             return
-        if self.update_job is not None or self.recorder is not None or self.job is not None or self.tools.ai_job is not None:
-            self.update_status.setText("Finish current voice or assistant work before installing.")
+        if self.update_job is not None or self.model_update_job is not None or self.recorder is not None or self.job is not None or self.tools.ai_job is not None:
+            self.update_status.setText("Finish current voice, assistant or model update work before installing.")
             self.show_updates()
             return
         if not getattr(sys, "frozen", False):
@@ -846,6 +917,10 @@ class JoyWindow(QMainWindow):
             self.sync_keyboard_controls()
         elif self.quitting:
             self.keyboard_resume = False
+        self.apply_model_update()
+        if self.model_update_deferred is not None and not self.quitting:
+            manual, self.model_update_deferred = self.model_update_deferred, None
+            QTimer.singleShot(0, lambda: self.check_model_updates(manual))
 
     def toggle_record(self):
         if self.recorder is not None:
@@ -993,6 +1068,9 @@ class JoyWindow(QMainWindow):
     def prepare_model(self):
         if self.job is not None or self.recorder is not None:
             return
+        if self.model_update_job is not None:
+            self.model_update_status.setText("Sherpa update is already running. You can keep using voice typing.")
+            return
         self.cancel_event = threading.Event()
         self._controls(False)
         self.record_btn.setEnabled(False)
@@ -1124,7 +1202,8 @@ class JoyWindow(QMainWindow):
         self.cancel()
         self.update_timer.stop()
         self.update_cancel.set()
-        if self.job is not None or self.update_job is not None:
+        self.model_update_cancel.set()
+        if self.job is not None or self.update_job is not None or self.model_update_job is not None:
             self.quitting = True
             self.hide()
             self.compact.hide()

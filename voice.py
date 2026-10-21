@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import io
 import os
 import subprocess
@@ -401,16 +400,20 @@ class Recognizer:
         if self._sherpa is None:
             if not self.model_ready(SHERPA_MODEL):
                 raise VoiceError("Sherpa Bangla model is missing. Download it in Preferences first.")
-            import sherpa_onnx
-
             path = self._model_path(SHERPA_MODEL)
-            self._sherpa = sherpa_onnx.OnlineRecognizer.from_transducer(
-                encoder=str(path / "encoder.onnx"), decoder=str(path / "decoder.onnx"),
-                joiner=str(path / "joiner.onnx"), tokens=str(path / "tokens.txt"),
-                num_threads=1, provider="cpu", model_type="zipformer2", decoding_method="greedy_search",
-                enable_endpoint_detection=False,
-            )
+            self._sherpa = self.build_sherpa(path)
         return self._sherpa
+
+    @staticmethod
+    def build_sherpa(path):
+        import sherpa_onnx
+
+        return sherpa_onnx.OnlineRecognizer.from_transducer(
+            encoder=str(path / "encoder.onnx"), decoder=str(path / "decoder.onnx"),
+            joiner=str(path / "joiner.onnx"), tokens=str(path / "tokens.txt"),
+            num_threads=1, provider="cpu", model_type="zipformer2", decoding_method="greedy_search",
+            enable_endpoint_detection=False,
+        )
 
     def start_early(self, pcm, rate, language, cancel_event):
         running = self._early
@@ -426,7 +429,11 @@ class Recognizer:
         return pending
 
     def _model_path(self, model: str) -> Path:
-        if model not in (*MODELS, SHERPA_MODEL):
+        if model == SHERPA_MODEL:
+            from model_updates import active_model
+
+            return active_model(self.cache_dir)[0]
+        if model not in MODELS:
             raise VoiceError("Choose a supported offline model: tiny, base, or small.")
         cached = self.cache_dir / model
         if self._complete(cached):
@@ -436,12 +443,13 @@ class Recognizer:
 
     @staticmethod
     def _complete(path: Path) -> bool:
-        if path.name == SHERPA_MODEL:
-            return all((path / name).is_file() and (path / name).stat().st_size == size
-                       for name, (size, _) in SHERPA_FILES.items())
         return all((path / name).is_file() for name in ("model.bin", "config.json", "tokenizer.json"))
 
     def model_ready(self, model: str = "base") -> bool:
+        if model == SHERPA_MODEL:
+            from model_updates import active_model, files_ready
+
+            return files_ready(*active_model(self.cache_dir))
         path = self._model_path(model)
         return self._complete(path)
 
@@ -472,27 +480,10 @@ class Recognizer:
         self._check_cancel(cancel_event)
         try:
             if model == SHERPA_MODEL:
-                from huggingface_hub import hf_hub_download
+                from model_updates import active_model, download_model
 
-                path = self.cache_dir / SHERPA_MODEL
-                for name, (size, digest) in SHERPA_FILES.items():
-                    self._check_cancel(cancel_event)
-                    if status:
-                        status(f"Preparing Sherpa Bangla: {name}. One-time model download is about 90 MiB.")
-                    # shortcut: a file download completes before cancel applies; use chunked transport if needed.
-                    downloaded = path / name
-                    if force or not downloaded.is_file():
-                        downloaded = Path(hf_hub_download(
-                            SHERPA_REPO, name, revision=SHERPA_REVISION, local_dir=str(path),
-                            token=False, force_download=force,
-                        ))
-                    if downloaded.resolve() != (path / name).resolve():
-                        raise VoiceError("Sherpa download returned an unexpected file location.")
-                    with downloaded.open("rb") as file:
-                        valid = downloaded.stat().st_size == size and hashlib.file_digest(file, "sha256").hexdigest() == digest
-                    if not valid:
-                        downloaded.unlink()
-                        raise VoiceError("Sherpa model verification failed. Retry the download.")
+                path, manifest = active_model(self.cache_dir)
+                download_model(path, manifest, cancel_event, status, force)
                 self._check_cancel(cancel_event)
                 self._sherpa = None
                 self._load_sherpa()
