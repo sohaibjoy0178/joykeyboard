@@ -2,7 +2,7 @@
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
-Windows Bengali/English keyboard and voice studio. Independently built; no NMS Kontho proprietary code, dictionaries, branding, credentials or license checks reused. Original J/microphone icon included.
+Windows Bengali/English keyboard and voice studio. Independently built;
 
 ![Light Glass bar with transparent rounded corners](docs/screenshots/glass-light-bar.png)
 
