@@ -2,11 +2,10 @@
 import gzip
 import importlib.metadata
 import json
-from pathlib import Path
 import re
 import shutil
 import unicodedata
-import urllib.request
+from pathlib import Path
 
 import msgpack
 
@@ -57,7 +56,16 @@ def main():
         assert mapping["k"] == "ক" and len(mapping) >= 90
         layouts[name] = mapping
         print(name, len(mapping))
-    (ROOT / "layouts.json").write_text(json.dumps({"license": "LGPL-2.1-or-later", "source": "m17n-db MIM/bn-probhat.mim and MIM/bn-inscript.mim; original sources and COPYING included", "changes": "Extracted printable ASCII key maps; AltGr and keypad mapping omitted.", "layouts": layouts}, ensure_ascii=False, indent=2), encoding="utf-8")
+    source = (ROOT / "bn-unijoy.mim").read_text(encoding="utf-8")
+    live = source[source.index("(livekey"):source.index("((A-=)")]
+    mapping = {json.loads('"' + key + '"'): json.loads('"' + value + '"')
+               for key, value in re.findall(r'\("((?:\\.|[^"\\])*)"\s+"((?:\\.|[^"\\])*)"\)', live)}
+    mapping["g"] = "্"
+    independent = source[source.index("(independent"):source.index("(state")]
+    for key, value in re.findall(r'\("(.)" \(delete @-\) "([^"]+)"\)', independent):
+        mapping["g" + key] = value
+    layouts["bijoy"] = mapping
+    (ROOT / "layouts.json").write_text(json.dumps({"license": "LGPL-2.1-or-later", "source": "m17n-db MIM/bn-probhat.mim and MIM/bn-inscript.mim; original sources and COPYING included; bn-unijoy.mim (m17n-db 1.7.0-2 via Debian Sources)", "changes": "Extracted printable ASCII key maps; AltGr and keypad mapping omitted. Bijoy-style UniJoy printable keys and g-prefix independent vowels extracted; JoyKeyboard handles bounded visual-order vowels/reph; AltGr omitted.", "layouts": layouts}, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 if __name__ == "__main__":

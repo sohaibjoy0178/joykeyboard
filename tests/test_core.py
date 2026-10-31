@@ -106,3 +106,12 @@ def test_removed_whisper_preferences_migrate_to_google_without_touching_models(t
     assert settings["theme"] == "dark" and settings["voice_shortcut"] == "Ctrl+Alt+V"
     save_settings(path, settings)
     assert model.read_bytes() == b"retained user download"
+
+
+def test_avro_and_bijoy_layout_preferences_survive_reload(tmp_path):
+    for layout in ("phonetic", "bijoy"):
+        path = tmp_path / "settings.json"
+        settings, _ = load_settings(path)
+        settings["keyboard_layout"] = layout
+        save_settings(path, settings)
+        assert load_settings(path)[0]["keyboard_layout"] == layout

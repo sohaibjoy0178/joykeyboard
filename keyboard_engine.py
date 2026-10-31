@@ -19,7 +19,8 @@ from avro.core.config import BIJOY_MAP
 from core import data_directory
 
 ASSETS = Path(__file__).resolve().parent / "assets" / "keyboard"
-LAYOUTS = {"phonetic": "Bangla phonetic", "english": "English", "probhat": "Probhat", "inscript": "Bengali InScript"}
+LAYOUTS = {"phonetic": "Avro Phonetic", "english": "English", "probhat": "Probhat", "inscript": "Bengali InScript",
+           "bijoy": "Bijoy-style (UniJoy)"}
 _C = r"[ক-হড়ঢ়য়ৎ]"
 _CORE = _C + r"[়]?(?:্[‌‍]?" + _C + r"[়]?)*"
 _SYLLABLE = re.compile(_CORE + r"[ািীুূৃেৈোৌৗ]?[ঁংঃ]*")
@@ -174,6 +175,21 @@ class KeyboardEngine:
         if layout == "phonetic":
             return _normalize(avro.parse(text))
         mapping = _layouts()[layout]
+        if layout == "bijoy":
+            # g-prefix vowels must resolve before the single-key hasanta mapping.
+            output, index = [], 0
+            while index < len(text):
+                pair = text[index:index + 2]
+                if len(pair) == 2 and pair in mapping:
+                    output.append(mapping[pair])
+                    index += 2
+                else:
+                    output.append(mapping.get(text[index], text[index]))
+                    index += 1
+            converted = "".join(output)
+            converted = re.sub("(?<![ক-হড়ঢ়য়ৎ়])([িেৈ])(" + _CORE + ")", r"\2\1", converted)
+            converted = re.sub("(" + _CORE + r")([ািীুূৃেৈোৌৗ]?[ঁংঃ]*)র্", r"র্\1\2", converted)
+            return _normalize(converted)
         return _normalize("".join(mapping.get(char, char) for char in text))
 
     def suggest(self, prefix: str, limit: int = 8) -> list[str]:

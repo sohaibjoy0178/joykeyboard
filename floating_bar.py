@@ -278,14 +278,15 @@ class CompactBar(QWidget):
             return
         self._last_state = state
         self.setWindowOpacity(owner.settings["bar_opacity"] / 100)
-        layout = {"phonetic": "Phonetic", "english": "English", "probhat": "Probhat", "inscript": "InScript"}[owner.settings["keyboard_layout"]]
+        layout = {"phonetic": "Avro", "english": "English", "probhat": "Probhat", "inscript": "InScript", "bijoy": "Bijoy"}[owner.settings["keyboard_layout"]]
         self.mode.setText(f"{'বাং' if owner.language.currentData() == 'bn-BD' else 'EN'} · {layout} ▾")
         self.mode.setToolTip(f"Voice: {owner.language.currentText()}\nKeyboard: {LAYOUTS[owner.settings['keyboard_layout']]}\nClick to change language or layout")
         self.mode.setEnabled(owner.language.isEnabled())
         _flag(self.keyboard_btn, "active", enabled)
         dark = owner.settings["theme"] == "dark"
         self.keyboard_btn.setIcon(line_icon("keyboard", ("#A9CDFF" if enabled else "#CFDAEC") if dark else ("#0962CA" if enabled else "#20364F")))
-        self.keyboard_btn.setToolTip(f"Keyboard {'ON' if enabled else 'OFF'} · F12\nType ami, then Space → আমি (phonetic)\nSpace or Enter inserts the composed word")
+        example = "j = ক · gf = আ · jgN = ক্ষ" if owner.settings["keyboard_layout"] == "bijoy" else "Type ami, then Space → আমি (Avro)" if owner.settings["keyboard_layout"] == "phonetic" else LAYOUTS[owner.settings["keyboard_layout"]]
+        self.keyboard_btn.setToolTip(f"Keyboard {'ON' if enabled else 'OFF'} · F12\n{example}\nSpace or Enter inserts the composed word")
         self.keyboard_btn.setAccessibleName(self.keyboard_btn.toolTip())
         self.keyboard_btn.setEnabled(not recording and not busy)
         _flag(self.record, "recording", recording)

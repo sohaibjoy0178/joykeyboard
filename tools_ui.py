@@ -211,7 +211,7 @@ class KeyboardTools(QWidget):
         self.layout_choice.currentIndexChanged.connect(self._layout_changed)
         row.addWidget(self.layout_choice)
         page.addLayout(row)
-        page.addWidget(_note("Type Latin keys below for a local preview. F12 enables typing into other apps; F1–F8 select global suggestions. Secure/elevated apps may reject insertion."))
+        page.addWidget(_note("Avro: ami → আমি. Bijoy-style (UniJoy): j → ক, gf → আ, jgN → ক্ষ. F12 enables typing into other apps; Space/Enter commits the preview. F1–F8 select suggestions. Unicode output is recommended; Preferences also offers Bijoy ANSI for legacy fonts."))
         self.preview_input = _edit("Local typing input", "Try: ami banglay gan gai")
         self.preview_input.textChanged.connect(self._preview_changed)
         page.addWidget(self.preview_input)
@@ -418,9 +418,9 @@ class KeyboardTools(QWidget):
         page.addWidget(_note("Compose text with Bengali or Latin keys, then Insert into the chosen destination. Shift changes Latin case. These keys compose text here; they do not simulate system Ctrl/Alt shortcuts."))
         row = QHBoxLayout()
         self.screen_language = QComboBox()
-        self.screen_language.addItems(["বাংলা", "English"])
+        self.screen_language.addItems(["বাংলা", "English", "Avro Phonetic", "Bijoy-style (UniJoy)"])
         self.screen_language.setAccessibleName("On-screen key language")
-        self.screen_language.currentIndexChanged.connect(self._refresh_keys)
+        self.screen_language.currentIndexChanged.connect(self._screen_mode_changed)
         row.addWidget(self.screen_language)
         self.screen_shift = QCheckBox("Shift")
         self.screen_shift.toggled.connect(self._refresh_keys)
@@ -446,9 +446,21 @@ class KeyboardTools(QWidget):
         row = QHBoxLayout()
         row.addWidget(_button("Copy text", lambda: self._copy(self.screen_text.toPlainText())))
         row.addWidget(_button("Insert text", lambda: self._send(self.screen_text.toPlainText())))
-        row.addWidget(_button("Clear", self.screen_text.clear))
+        row.addWidget(_button("Clear", self._clear_screen))
         page.addLayout(row)
+        self.screen_raw = ""
+        self.screen_prefix = ""
         self._refresh_keys()
+
+    def _screen_mode_changed(self):
+        self.screen_prefix = self.screen_text.toPlainText()
+        self.screen_raw = ""
+        self.screen_text.setReadOnly(self.screen_language.currentIndex() >= 2)
+        self._refresh_keys()
+
+    def _clear_screen(self):
+        self.screen_raw = self.screen_prefix = ""
+        self.screen_text.clear()
 
     def _refresh_keys(self):
         if self.screen_language.currentIndex() == 0:
@@ -462,8 +474,9 @@ class KeyboardTools(QWidget):
         self.current_screen_keys = keys
         for index, key in enumerate(self.screen_buttons):
             character = keys[index] if index < len(keys) else ""
-            key.setText(character)
-            key.setAccessibleName(f"Insert {character}" if character else "Unused key")
+            converted = self.engine.convert(character, "phonetic" if self.screen_language.currentIndex() == 2 else "bijoy") if character and self.screen_language.currentIndex() >= 2 else character
+            key.setText(f"{character} · {converted}" if character != converted else character)
+            key.setAccessibleName(f"Key {character}: {converted}" if character else "Unused key")
             key.setVisible(bool(character))
 
     def _screen_character(self, index):
@@ -471,6 +484,17 @@ class KeyboardTools(QWidget):
             self._screen_insert(self.current_screen_keys[index])
 
     def _screen_insert(self, character):
+        if self.screen_language.currentIndex() >= 2:
+            if character is None:
+                if self.screen_raw:
+                    self.screen_raw = self.screen_raw[:-1]
+                else:
+                    self.screen_prefix = self.screen_prefix[:-1]
+            else:
+                self.screen_raw += character
+            layout = "phonetic" if self.screen_language.currentIndex() == 2 else "bijoy"
+            self.screen_text.setPlainText(self.screen_prefix + self.engine.convert(self.screen_raw, layout))
+            return
         cursor = self.screen_text.textCursor()
         if character is None:
             cursor.deletePreviousChar()

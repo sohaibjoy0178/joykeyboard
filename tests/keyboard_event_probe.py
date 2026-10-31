@@ -17,7 +17,7 @@ sys.path.insert(0, str(ROOT))
 def probe(executable=None):
     from package_probe import close_owned_window
 
-    from keyboard_engine import KeyboardEngine
+    from keyboard_engine import KeyboardEngine, to_ansi
     from keyboard_hook import KeyboardHook
     from windows import Input, InputUnion, KeyInput, MouseInput, foreground_target, user32
 
@@ -37,6 +37,9 @@ def probe(executable=None):
             return super().suggest(prefix, limit)
     hook = None if executable else KeyboardHook(Engine(directory / "words.json"), lambda *args: None, errors.append)
     app_process = None
+    layout = next((arg.split("=", 1)[1] for arg in sys.argv if arg.startswith("--layout=")), "phonetic")
+    encoding = next((arg.split("=", 1)[1] for arg in sys.argv if arg.startswith("--encoding=")), "unicode")
+    assert layout in ("phonetic", "bijoy") and encoding in ("unicode", "bijoy")
 
     def info():
         try:
@@ -57,9 +60,11 @@ def probe(executable=None):
             target = foreground_target()
             assert target and target.pid == owned_pid, "Owned test editor lost focus; input stopped"
             key = 0x20 if character == " " else ord(character.upper())
-            events = (Input * 2)(Input(1, InputUnion(ki=KeyInput(key, 0, 0, 0, 0))),
-                                 Input(1, InputUnion(ki=KeyInput(key, 0, 2, 0, 0))))
-            assert user32.SendInput(2, events, ctypes.sizeof(Input)) == 2
+            pairs = [(key, 0), (key, 2)]
+            if character.isupper():
+                pairs = [(0xA0, 0), *pairs, (0xA0, 2)]
+            events = (Input * len(pairs))(*(Input(1, InputUnion(ki=KeyInput(vk, 0, flags, 0, 0))) for vk, flags in pairs))
+            assert user32.SendInput(len(pairs), events, ctypes.sizeof(Input)) == len(pairs)
             time.sleep(delay)
 
     try:
@@ -88,7 +93,7 @@ def probe(executable=None):
         if executable:
             profile = directory / "profile/JoyKeyboard"
             profile.mkdir(parents=True)
-            settings = {"bar_position": [300, 20], "theme": "dark"}
+            settings = {"bar_position": [300, 20], "theme": "dark", "keyboard_layout": layout, "output_encoding": encoding}
             if "--voice-shortcut" in sys.argv:
                 settings.update(voice_shortcut="Ctrl+Alt+Shift+F9", engine="sherpa")
             (profile / "settings.json").write_text(json.dumps(settings), encoding="utf-8")
@@ -130,23 +135,29 @@ def probe(executable=None):
             time.sleep(.3)
         else:
             hook.start()
+            hook.set_layout(layout)
+            hook.set_output_encoding(encoding)
             hook.set_enabled(True)
             wait_for(lambda: hook.enabled, "Keyboard did not enable")
         started = time.monotonic()
-        send("ami banglay likhi ")
-        wait_for(lambda: info().get("actual") == unicodedata.normalize("NFC", "আমি বাংলায় লিখি "), "Bangla input failed")
-        send("ami bangla ", delay=.003)
-        expected = unicodedata.normalize("NFC", "আমি বাংলায় লিখি আমি বাংলা ")
-        wait_for(lambda: info().get("actual") == expected, "Fast multiword input failed")
-        send("ami\b\bmi ")
+        phrase = "gfmd hfQVf djgN jAd " if layout == "bijoy" else "ami banglay likhi "
+        expected = unicodedata.normalize("NFC", "আমি বাংলা ক্ষি র্কি " if layout == "bijoy" else "আমি বাংলায় লিখি ")
+        def encoded(text):
+            return to_ansi(text) if encoding == "bijoy" else text
+        send(phrase)
+        wait_for(lambda: info().get("actual") == encoded(expected), "Bangla input failed")
+        send("gfmd hfQVf " if layout == "bijoy" else "ami bangla ", delay=.003)
+        expected += "আমি বাংলা "
+        wait_for(lambda: info().get("actual") == encoded(expected), "Fast multiword input failed")
+        send("gfmdd\b " if layout == "bijoy" else "ami\b\bmi ")
         expected += "আমি "
-        wait_for(lambda: info().get("actual") == expected, "Backspace composition failed")
+        wait_for(lambda: info().get("actual") == encoded(expected), "Backspace composition failed")
         command.write_text("password", encoding="utf-8")
         wait_for(lambda: foreground_target() and foreground_target().focus == info().get("password"), "Owned password field lost focus")
         send("ami ")
         wait_for(lambda: info().get("password_text") == "ami ", "Password must stay unconverted")
         assert not errors, errors
-        report = dict(passed=True, actual=info()["actual"], real_windows_hook=True,
+        report = dict(passed=True, actual=info()["actual"], real_windows_hook=True, layout=layout, encoding=encoding,
                       input="Windows SendInput virtual-key events, no direct composition calls",
                       physical_hardware_tested=False, packaged=bool(executable),
                       packaged_saved_theme="dark" if executable else None,

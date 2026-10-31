@@ -20,7 +20,7 @@ main = marshal.loads(archive.extract("main"))
 assert main == compile((ROOT / "main.py").read_text(encoding="utf-8"), main.co_filename, "exec")
 results["main"] = True
 names = {name.replace("\\", "/") for name in archive.toc}
-for name in ("assets/keyboard/bn-words.json", "assets/keyboard/en-words.json", "assets/keyboard/layouts.json",
+for name in ("assets/keyboard/bn-words.json", "assets/keyboard/en-words.json", "assets/keyboard/layouts.json", "assets/keyboard/bn-unijoy.mim",
              "assets/vad/silero_vad_v6.onnx", "speech_recognition/flac-win32.exe", "licenses/KEYBOARD-SOURCES.md",
              "assets/joykeyboard.ico", "assets/models/SHERPA-LICENSE.txt"):
     assert name in names or (executable.parent / "_internal" / name).is_file(), name

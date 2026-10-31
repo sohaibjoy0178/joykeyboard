@@ -17,6 +17,13 @@ JoyKeyboard implements its own composition orchestration, personal word store, s
 - Probhat credit: Red Hat, Inc.; original keymap by Taneem Ahmed, implementation by Jatin Nansi, documentation by Runa Bhattacharjee. InScript source credits Sun Microsystems, Inc. (2003), scim-tables, and iiimf unitLE's Bengali layout.
 - Adaptation: `layouts.json` extracts printable ASCII/Shift mappings from the original MIM files. `prepare_data.py` reproduces extraction. AltGr and numeric keypad-specific rules are omitted. Maps remain separate replaceable JSON data; distribute source and license with them. This is a layout implementation, not Windows TSF/IME registration.
 
+## Avro and Bijoy-style selection
+
+- The existing `phonetic` preference identity is now displayed as **Avro Phonetic**; it continues to call the installed avro.py parser. This is a compatible phonetic implementation, not the separate OmicronLab application or its entire options/settings.
+- **Bijoy-style (UniJoy)** uses printable/Shift keys and the `g` dead-key independent-vowel sequences from m17n-db 1.7.0-2 `bn-unijoy.mim`, preserved in `assets/keyboard/`. Source: https://sources.debian.org/src/m17n-db/1.7.0-2/MIM/bn-unijoy.mim/ . Copyright 2005, 2008 National Institute of Advanced Industrial Science and Technology (AIST), Registration Number H15PRO112; LGPL-2.1-or-later (existing LGPL-2.1.txt). `prepare_data.py` reproduces extraction. No proprietary Bijoy program/map is redistributed.
+- JoyKeyboard independently handles bounded pre-base vowel/reph ordering. It supports the compatible UniJoy variant rather than every Bijoy release: for example `j` → ক, `gf` → আ, `jgN` → ক্ষ, `x` → ো and `gx` → ও. Independent `g`-prefix vowels resolve before the single-key hasanta. Both logical/post-consonant vowels and common visual/pre-consonant vowel entry are accepted where unambiguous. AltGr extensions and proprietary edition-specific macros are not implemented.
+- Output encoding remains a separate preference: Unicode for modern apps or existing Bijoy ANSI conversion for compatible legacy fonts. Layout changes do not silently change voice language or encoding. System typing retains the same pending-word preview/Space-or-Enter commit and external editor safety checks. Screen keys additionally offer Avro/Bijoy composition.
+
 ## Bengali and English word frequency data
 
 - Source: `wordfreq==3.1.1`, https://github.com/rspeer/wordfreq ; package https://pypi.org/project/wordfreq/3.1.1/ . Copyright Robyn Speer and wordfreq contributors.

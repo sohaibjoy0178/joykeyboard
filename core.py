@@ -13,7 +13,7 @@ DEFAULT_RULES = {
     "নতুন লাইন": "\n",
 }
 DEFAULT_VOICE_SHORTCUT = "Ctrl+Alt+Space"
-APP_VERSION = "0.4.16"
+APP_VERSION = "0.4.17"
 
 
 def parse_voice_shortcut(value):
@@ -98,7 +98,7 @@ def load_settings(path: Path) -> tuple[dict, str]:
                 values[key] = saved[key]
         if saved.get("theme") == "glass":
             values["theme"] = "light"
-        if saved.get("keyboard_layout") in ("phonetic", "english", "probhat", "inscript"):
+        if saved.get("keyboard_layout") in ("phonetic", "english", "probhat", "inscript", "bijoy"):
             values["keyboard_layout"] = saved["keyboard_layout"]
         if saved.get("output_encoding") in ("unicode", "bijoy"):
             values["output_encoding"] = saved["output_encoding"]

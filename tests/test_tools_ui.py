@@ -402,6 +402,35 @@ def test_tools_work_with_real_engine_layouts_learning_and_dictionary(qt_app, tmp
         view.close()
 
 
+@pytest.mark.parametrize("mode,keys", [(2, "ami"), (3, "gfmd")])
+def test_screen_keys_compose_avro_and_bijoy_with_shift_backspace_and_clear(qt_app, tmp_path, mode, keys):
+    from keyboard_engine import KeyboardEngine
+
+    view = KeyboardTools(None, KeyboardEngine(tmp_path / "words.json"), lambda _: None)
+    try:
+        view.screen_language.setCurrentIndex(mode)
+        for key in keys:
+            view._screen_character(view.current_screen_keys.index(key))
+        assert view.screen_text.toPlainText() == "আমি"
+        view._screen_insert(None)
+        assert view.screen_text.toPlainText() != "আমি"
+        view._screen_insert(keys[-1])
+        assert view.screen_text.toPlainText() == "আমি"
+        view._screen_insert(" ")
+        view.screen_shift.setChecked(True)
+        assert "J" in view.current_screen_keys
+        assert view.screen_raw == keys + " "
+        view._clear_screen()
+        assert not view.screen_text.toPlainText() and not view.screen_raw
+        if mode == 3:
+            view._screen_insert("j")
+            view._screen_insert("g")
+            view._screen_character(view.current_screen_keys.index("N"))
+            assert view.screen_text.toPlainText() == "ক্ষ"
+    finally:
+        view.close()
+
+
 def test_corrupt_dictionary_is_not_overwritten_by_normal_ui_edits(qt_app, tmp_path):
     from keyboard_engine import KeyboardEngine
 

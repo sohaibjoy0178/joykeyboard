@@ -908,6 +908,21 @@ def test_bar_menu_changes_existing_controls_and_reaches_every_tool(window, qt_ap
     bar._menu.close()
 
 
+@pytest.mark.parametrize("layout,label", [("phonetic", "Avro"), ("bijoy", "Bijoy")])
+def test_bar_layout_menu_exposes_avro_bijoy_and_keeps_width(window, qt_app, layout, label):
+    window.show_compact()
+    bar = window.compact
+    bar.main_menu()
+    menu = next(action.menu() for action in bar._menu.actions() if action.text() == "Keyboard layout")
+    title = "Avro Phonetic" if layout == "phonetic" else "Bijoy-style (UniJoy)"
+    next(action for action in menu.actions() if action.text() == title).trigger()
+    bar._menu.close()
+    qt_app.processEvents()
+    assert window.settings["keyboard_layout"] == layout
+    assert window.tools.layout_choice.currentData() == layout and window.keyboard_hook.layout == layout
+    assert label in bar.mode.text() and bar.width() == 384
+
+
 def test_developer_credit_links_to_requested_facebook_profile(window):
     from PySide6.QtWidgets import QLabel
     labels = window.tabs.widget(3).findChildren(QLabel)

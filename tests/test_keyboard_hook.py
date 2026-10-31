@@ -49,6 +49,26 @@ def type_word(hook, word):
         assert hook._capture(key, False)
 
 
+@pytest.mark.parametrize("layout,raw,expected", [("phonetic", "ami", "আমি"), ("bijoy", "gfmd", "আমি"),
+                                               ("bijoy", "djgN", "ক্ষি")])
+@pytest.mark.parametrize("encoding", ["unicode", "bijoy"])
+def test_real_layout_commits_through_shared_keyboard_hook(setup, tmp_path, layout, raw, expected, encoding):
+    from keyboard_engine import KeyboardEngine, to_ansi
+    hook, _, target, _, errors, output = setup
+    hook.engine = KeyboardEngine(tmp_path / "words.json")
+    hook.set_layout(layout)
+    hook.set_output_encoding(encoding)
+    for char in raw:
+        hook._consume(target, ord(char.upper()), char)
+    assert hook.rendered == expected
+    hook._consume(target, 0x08, "")
+    assert hook.rendered == hook.engine.convert(raw[:-1], layout)
+    hook._consume(target, ord(raw[-1].upper()), raw[-1])
+    hook._consume(target, 0x20, "")
+    assert output[-1] == (to_ansi(expected) if encoding == "bijoy" else expected, 0x20, False)
+    assert not hook.raw and not errors
+
+
 def test_composition_commits_actual_bengali_with_space_atomically(setup):
     hook, engine, _, updates, errors, output = setup
     type_word(hook, "ami")

@@ -1,4 +1,28 @@
-# JoyKeyboard 0.4.16 verification
+# JoyKeyboard 0.4.17 verification
+
+Delivered `dist/0.4.17/JoyKeyboard-Setup.exe`, **58,649,498 bytes** (58.6 MB). SHA-256: `afa2c4b870cec3131d5e0f1f6c67ceae5f15efc31632f51c0bd0f61b14275d10`. Installer/checksum: [v0.4.17](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.17).
+
+## Avro Phonetic and Bijoy-style keyboard selection
+
+The existing avro.py phonetic engine is now labelled **Avro Phonetic**, retaining the `phonetic` preference identity and behavior. Added **Bijoy-style (UniJoy)** as a persisted fixed layout in the same studio/tools and floating-bar menus. Existing English, Probhat and InScript choices remain. No new runtime dependency. Unicode remains default; existing Bijoy ANSI output is a separate preference and layout selection does not alter voice language/engine/encoding.
+
+The new layout uses printable/Shift and g-prefix independent-vowel mappings from the LGPL-2.1-or-later m17n-db 1.7.0-2 bn-unijoy.mim, original source/notices retained under assets/keyboard, with updated KEYBOARD-SOURCES.md and reproducible extraction. This is the open UniJoy variant rather than every proprietary Bijoy edition: j→ক, gf→আ, jgN→ক্ষ, x→ো and gx→ও. AltGr/edition-specific macros are not implemented. JoyKeyboard independently resolves multi-key vowel sequences before single-key hasanta and applies bounded, context-aware pre-base vowel/reph ordering, accepting tested logical and visual vowel entry. Pending composition/Space-or-Enter commit stays in the existing hook; no general-purpose m17n interpreter or TSF installation is added.
+
+Screen keys retain direct Bengali/English modes and add Avro/Bijoy composition with labelled key outputs, Shift, backspace and clear. Previously composed text is preserved when changing modes; the active raw sequence is recomputed for subsequent keys. The floating bar uses short Avro/Bijoy labels and layout-specific hover examples, retaining 384-pixel width.
+
+## Executed checks
+
+- **359 pytest tests passed**, two upstream Python deprecation warnings (`artifacts/tests-0.4.17-final.log`). New coverage includes independent vowels, shifted consonants, digits, conjuncts, reph, pre/post-base vowels, whitespace, old Avro identity, persisted layout selection, shared hook Unicode/ANSI commit/backspace, both floating-bar menu choices/width, and Avro/Bijoy screen-key composition/Shift/backspace/clear. Existing two-engine voice, keyboard protections, updater/settings/theme tests passed. Application/tests/hooks and modified asset-preparation script Ruff, pip check and Git whitespace passed.
+- **Actual Windows low-level hook into a separate owned native editor**, using SendInput virtual-key events rather than direct conversion calls: Avro Unicode, Bijoy-style Unicode and Bijoy-style ANSI passed source and final packaged runs. Bijoy phrase included আমি বাংলা ক্ষি র্কি, exercising Shift, g-prefix vowels, conjuncts and reph. Fast multiword input, raw-composition backspace and native password passthrough passed. Reports: `artifacts/bijoy-source-unicode.log`, `bijoy-source-ansi.log`, `avro-source-native.log`, `bijoy-packaged-unicode.log`, `bijoy-packaged-ansi.log`, `avro-packaged-native.log`. An initial packaged Avro attempt correctly stopped when another owned probe took focus; it passed when rerun alone. Physical keyboard hardware, Word and browser-specific fields were not tested.
+- Rendered/inspected Bijoy keyboard preview, mapped Screen keys and compact bar (`artifacts/bijoy-keyboard-studio.png`, `bijoy-screen-keys.png`, `bijoy-floating-bar.png`). Preview gfmd hfQVf djgN produced আমি বাংলা ক্ষি; bar width remained 384.
+- Final clean PyInstaller/Inno builds passed after bundled source/assets/README settled (`artifacts/build-0.4.17-final.log`, `build-0.4.17-setup-final.log`). Fifteen modules plus main match source. Layout JSON and README match packaged files byte-for-byte; original UniJoy MIM/required licenses/assets present. Optional model weights and removed Whisper runtimes remain excluded.
+- Final empty-profile packaged EXE/System32-only PATH passed Light/Dark alpha, Google Bangla and early automatic pause, explicitly prepared Sherpa offline Bangla, staged verified-model pointer with subsequent frozen offline/automatic-pause recognition, normal hook startup and graceful close (`artifacts/layouts-package-final.log`). No live microphone used; accelerated diagnostic times are not realtime latency.
+- Actual temporary installer/reinstall/uninstall passed default sign-in startup, quoted Run command, developer/Facebook metadata, startup-off removal, normal startup/graceful exit and user-data retention, restoring original registry/shortcut and leaving user's running copy untouched (`artifacts/installer-0.4.17-final.log`). Installed Google/Dark ten-second sample: **137.16 MiB resident, 74.90 MiB private, 0.312% of one CPU core**; includes ordinary update activity and is not a resource ceiling.
+- Source includes the intervening remote README edit without reverting it. Release assets/digests and public production app/model channels are checked during publication. Complete app-update helper installation and new accuracy/low-end hardware benchmarking were not repeated; their implementation is unchanged.
+
+Limits: Bijoy-style uses the open UniJoy variant, with AltGr and proprietary edition-specific behavior excluded. Like other layouts, composition commits on Space/Enter/candidate selection; protected/elevated/custom fields may reject insertion. Existing ANSI output needs a compatible legacy font and is not a general encoding detector. Installer unsigned.
+
+# Historical 0.4.16 verification
 
 Delivered `dist/0.4.16/JoyKeyboard-Setup.exe`, **58,648,065 bytes** (58.6 MB), down from 100,939,073 bytes in 0.4.15 (**41.9% smaller**). SHA-256: `7f49bf23d0c86952dfe1eb084ac3e4474dd278be4e145f271cb93acb6140bdc4`. Installer/checksum: [v0.4.16](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.16).
 

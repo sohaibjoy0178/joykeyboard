@@ -22,6 +22,24 @@ def test_phonetic_english_and_verified_layouts(engine):
         engine.convert("x", "unknown")
 
 
+@pytest.mark.parametrize("keys,expected", [
+    ("jJkKlL", "কখতথদধ"), ("gfmd", "আমি"), ("hfQVf", "বাংলা"),
+    ("hfQVflcM", "বাংলাদেশ"), ("hfQVfclM", "বাংলাদেশ"),
+    ("gf gd gD gs gS ga gc gC gx gX", "আ ই ঈ উ ঊ ঋ এ ঐ ও ঔ"),
+    ("jgN", "ক্ষ"), ("djgN", "ক্ষি"), ("jd", "কি"), ("dj", "কি"),
+    ("cjf", "কো"), ("jA", "র্ক"), ("jAd", "র্কি"),
+    ("123  ", "১২৩  "), ("gfmd\nhfQVf\tG", "আমি\nবাংলা\t।"),
+])
+def test_bijoy_style_unijoy_layout_vowels_reph_conjuncts_and_whitespace(engine, keys, expected):
+    assert engine.convert(keys, "bijoy") == unicodedata.normalize("NFC", expected)
+
+
+def test_avro_label_keeps_existing_preference_identity_and_parser(engine):
+    assert keyboard_engine.LAYOUTS["phonetic"] == "Avro Phonetic"
+    assert engine.convert("ami bangla", "phonetic") == "আমি বাংলা"
+    assert "UniJoy" in keyboard_engine.LAYOUTS["bijoy"]
+
+
 def test_voice_learning_does_not_load_large_dictionaries(tmp_path, monkeypatch):
     def forbidden():
         raise AssertionError("Idle startup and learning must not load dictionaries")
