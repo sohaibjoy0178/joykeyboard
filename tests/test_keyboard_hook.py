@@ -275,6 +275,95 @@ def test_f12_repeat_toggles_once_and_release_is_consumed(setup):
     assert hook.enabled
 
 
+def test_missed_modifier_release_recovers_typing(setup, monkeypatch):
+    hook, _, _, _, _, output = setup
+    assert not hook._capture(0xA2, True)
+    assert not hook._capture(0x41, True)
+    monkeypatch.setattr(module.user32, "GetAsyncKeyState", lambda _: 0)
+    hook._sync_keys()
+    type_word(hook, "ami")
+    hook._capture(0x20, True)
+    assert output == [("আমি", 0x20, False)]
+
+
+def test_missed_replayed_chord_release_recovers_and_balances_keys(setup, monkeypatch):
+    hook, _, _, _, _, output = setup
+    type_word(hook, "ami")
+    assert hook._capture(0xA2, True)
+    monkeypatch.setattr(module.user32, "GetAsyncKeyState", lambda _: 0)
+    hook._sync_keys()
+    assert not hook._chord and not hook._replay_keys and not hook._held
+    type_word(hook, "ami")
+    hook._capture(0x20, True)
+    assert output[-1] == ("আমি", 0x20, False)
+    assert ("replay", 0xA2, False) in output
+
+
+def test_key_sync_keeps_physically_held_modifiers_and_shortcuts(setup, monkeypatch):
+    hook, _, _, _, _, output = setup
+    hook._held.update({0xA2, 0xA0})
+    monkeypatch.setattr(module.user32, "GetAsyncKeyState", lambda _: 0x8000)
+    hook._sync_keys()
+    assert hook._held == {0xA2, 0xA0}
+    assert not hook._capture(0x43, True)
+    assert not output and not hook.raw
+
+
+def test_key_sync_keeps_suppressed_f12_down_until_real_release(setup, monkeypatch):
+    hook, _, _, _, _, _ = setup
+    assert hook._capture(0x7B, True)
+    assert not hook.enabled
+    monkeypatch.setattr(module.user32, "GetAsyncKeyState", lambda _: 0)
+    hook._sync_keys()
+    assert hook._capture(0x7B, True)
+    assert not hook.enabled
+    assert hook._capture(0x7B, False)
+    assert hook._capture(0x7B, True)
+    assert hook.enabled
+
+
+def test_enabling_keyboard_renews_native_hook(setup, monkeypatch):
+    hook, _, _, _, _, _ = setup
+    installed, removed = [], []
+    hook._hook = 41
+    hook._callback = object()
+    monkeypatch.setattr(module.user32, "SetWindowsHookExW", lambda *args: installed.append(args) or 42)
+    monkeypatch.setattr(module.user32, "UnhookWindowsHookEx", lambda handle: removed.append(handle))
+    hook.set_enabled(False)
+    hook.set_enabled(True)
+    assert hook._hook == 42 and len(installed) == 1 and removed == [41]
+
+
+def test_failed_hook_renewal_disables_keyboard_and_keeps_old_handle(setup, monkeypatch):
+    hook, _, _, _, errors, _ = setup
+    hook._hook = 41
+    hook._callback = object()
+    monkeypatch.setattr(module.user32, "SetWindowsHookExW", lambda *_: 0)
+    hook.set_enabled(True)
+    assert not hook.enabled and hook._hook == 41 and errors
+
+
+def test_enabling_keyboard_restarts_a_stopped_input_thread(setup, monkeypatch):
+    import threading
+    hook, _, _, _, errors, _ = setup
+    hook._thread = threading.Thread()
+    calls = []
+    monkeypatch.setattr(hook, "start", lambda: calls.append("start"))
+    hook.set_enabled(True)
+    assert calls == ["start"] and hook.enabled and not errors
+
+
+def test_failed_input_thread_restart_never_reports_keyboard_on(setup, monkeypatch):
+    import threading
+    hook, _, _, _, errors, _ = setup
+    hook._thread = threading.Thread()
+    def failed():
+        raise RuntimeError("hook denied")
+    monkeypatch.setattr(hook, "start", failed)
+    hook.set_enabled(True)
+    assert not hook.enabled and "hook denied" in errors[-1]
+
+
 def test_shift_function_key_shortcuts_pass_through(setup):
     hook, _, _, _, _, _ = setup
     assert not hook._capture(0xA0, True)

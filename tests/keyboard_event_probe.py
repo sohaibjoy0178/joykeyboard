@@ -15,6 +15,8 @@ sys.path.insert(0, str(ROOT))
 
 
 def probe(executable=None):
+    # Match Qt's per-monitor coordinates when clicking owned windows on mixed-DPI desktops.
+    ctypes.windll.user32.SetProcessDpiAwarenessContext(ctypes.c_void_p(-4))
     from package_probe import close_owned_window
 
     from keyboard_engine import KeyboardEngine, to_ansi
@@ -58,7 +60,7 @@ def probe(executable=None):
     def send(phrase, delay=.025):
         for character in phrase:
             target = foreground_target()
-            assert target and target.pid == owned_pid, "Owned test editor lost focus; input stopped"
+            assert target and target.pid == owned_pid, f"Owned test editor lost focus; input stopped: {target}"
             key = 0x20 if character == " " else ord(character.upper())
             pairs = [(key, 0), (key, 2)]
             if character.isupper():
@@ -131,6 +133,13 @@ def probe(executable=None):
             # The fixed compact layout puts the keyboard icon at (192, 24) logical pixels.
             user32.SetCursorPos(rectangle.left + round(192 * scale), rectangle.top + round(24 * scale))
             assert user32.SendInput(2, clicks, ctypes.sizeof(Input)) == 2
+            # A non-activating tool can leave the previous foreground window selected.
+            # Re-focus only our owned editor, as a user does before entering text.
+            user32.GetWindowRect(hwnd, ctypes.byref(rectangle))
+            user32.SetCursorPos(rectangle.left + 60, rectangle.top + 80)
+            assert user32.SendInput(2, clicks, ctypes.sizeof(Input)) == 2
+            wait_for(lambda: foreground_target() and foreground_target().pid == owned_pid,
+                     "Owned editor did not regain focus after enabling keyboard")
             user32.SetCursorPos(old_cursor.x, old_cursor.y)
             time.sleep(.3)
         else:
@@ -139,6 +148,20 @@ def probe(executable=None):
             hook.set_output_encoding(encoding)
             hook.set_enabled(True)
             wait_for(lambda: hook.enabled, "Keyboard did not enable")
+            if "--restart-thread" in sys.argv:
+                hook.stop()
+                hook.set_enabled(True)
+                wait_for(lambda: hook.enabled, "Stopped input thread did not restart")
+            if "--missed-release" in sys.argv:
+                # Reproduce a Ctrl release missed while the input desktop was unavailable.
+                hook._held.add(0xA2)
+                time.sleep(.3)
+            if "--lost-hook" in sys.argv:
+                assert user32.UnhookWindowsHookEx(hook._hook)
+                hook.set_enabled(False)
+                wait_for(lambda: not hook.enabled, "Keyboard did not disable")
+                hook.set_enabled(True)
+                wait_for(lambda: hook.enabled, "Keyboard did not restore removed hook")
         started = time.monotonic()
         phrase = "gfmd hfQVf djgN jAd " if layout == "bijoy" else "ami banglay likhi "
         expected = unicodedata.normalize("NFC", "আমি বাংলা ক্ষি র্কি " if layout == "bijoy" else "আমি বাংলায় লিখি ")
@@ -164,6 +187,9 @@ def probe(executable=None):
                       packaged_saved_voice_shortcut="--voice-shortcut" in sys.argv,
                       fast_multiword_input=True, backspace_composition=True, native_password_passthrough=True,
                       slow_suggestions="--slow-suggestions" in sys.argv,
+                      missed_modifier_release="--missed-release" in sys.argv,
+                      removed_hook_recovered="--lost-hook" in sys.argv,
+                      stopped_thread_recovered="--restart-thread" in sys.argv,
                       seconds=round(time.monotonic() - started, 3))
         result_name = "packaged-keyboard-event-check.json" if executable else "keyboard-event-check.json"
         (ROOT / "artifacts" / result_name).write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")

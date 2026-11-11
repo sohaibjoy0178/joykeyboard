@@ -1,4 +1,23 @@
-# JoyKeyboard 0.4.17 verification
+# JoyKeyboard 0.4.18 verification
+
+Delivered `dist/0.4.18/JoyKeyboard-Setup.exe`, **58,651,925 bytes** (58.7 MB). SHA-256: `2e5503d66dcdf640e8a7ed530309a00f38676229b192996ce8978e45f431b9bb`. Installer/checksum: [v0.4.18](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.18).
+
+## English-only keyboard recovery
+
+Reproduced the reported symptom using the actual Windows hook into an owned external native Edit: inject a stale tracked Ctrl-down state with no physical Ctrl held, then enter `ami banglay likhi `. Before the fix the editor received literal English (`artifacts/keyboard-missed-release-before.log`). The hook retained missed key releases indefinitely, so every later key bypassed Bangla conversion as a modifier shortcut. A fresh 0.4.17 process typed Bangla correctly in the same editor; the user's long-running installed process was not instrumented or terminated, so its precise triggering event is not established.
+
+The existing 100 ms input-thread timer now reconciles tracked modifier/replayed-key state against Windows and balances missed replay releases. Suppressed composing/F12 keys are excluded from asynchronous-state reconciliation because suppression prevents their Windows key state from updating; this preserves held-F12 repeat protection. Turning keyboard ON replaces the native hook, restarts a stopped input thread when needed, and reports restart/registration failures instead of claiming successful enablement. No new timer, package, settings migration or voice/UI change.
+
+## Executed checks
+
+- **367 tests passed**, two unchanged upstream Python deprecation warnings (`artifacts/tests-0.4.18-final.log`). New tests cover missed modifier and deferred chord releases, physically held modifiers, F12 hold suppression, hook renewal/failure and stopped-thread restart/failure. Ruff for application/tests/hooks, pip dependency check and Git whitespace passed.
+- Actual source Windows hook recovered after all three injected failures: a stopped input thread, stale Ctrl state, and an explicitly removed native hook followed by OFF/ON. Avro and Bijoy both delivered correct Bangla, fast multiword entry/backspace and native-password passthrough (`artifacts/keyboard-recovery-native-after.log`, `bijoy-recovery-native-after.log`). These use synthetic Windows SendInput, not direct converter calls for normal entry.
+- Final clean PyInstaller/Inno builds passed; all 15 embedded modules plus main match final source, required assets present, optional models and removed Whisper dependencies excluded. Packaged README matches source byte-for-byte. Final packaged normal UI keyboard-button path passed Avro, Bijoy Unicode and Bijoy ANSI in an external native editor (`artifacts/avro-packaged-0.4.18-final.log`, `bijoy-packaged-0.4.18-final.log`, `bijoy-ansi-packaged-0.4.18-final.log`). Earlier overlapping UI/focus probes were discarded and rerun in isolation; owned-PID focus guards prevented typing into another app. Probe now refocuses its owned editor after the non-activating bar click and uses per-monitor DPI coordinates.
+- Actual temporary install/reinstall/uninstall passed startup defaults/on-off, developer/Facebook metadata, normal launch/exit and user-data preservation, restoring the original registry/shortcut and leaving the user's running copy untouched (`artifacts/installer-0.4.18-final.log`). Installed Dark/Google ten-second idle sample: 132.70 MiB resident, 73.58 MiB private, 0.156% of one CPU core; this is not low-end hardware certification. Public release digest and app-update discovery are checked at publication.
+
+Limits: physical hardware, individual browser/Notepad versions and actual sleep/secure-desktop transitions were not certified. The reproduced missed-release state was injected deterministically. If Windows removes a hook while enabled, use the floating-bar keyboard button OFF/ON; F12 itself needs an active hook. Protected/elevated/custom fields may reject insertion, and Bijoy ANSI needs a compatible legacy font. Voice, model channel, app-update installation helper and low-end hardware performance were not re-benchmarked. Installer unsigned.
+
+# Historical 0.4.17 verification
 
 Delivered `dist/0.4.17/JoyKeyboard-Setup.exe`, **58,649,498 bytes** (58.6 MB). SHA-256: `afa2c4b870cec3131d5e0f1f6c67ceae5f15efc31632f51c0bd0f61b14275d10`. Installer/checksum: [v0.4.17](https://github.com/sohaibjoy0178/joykeyboard/releases/tag/v0.4.17).
 

@@ -100,6 +100,7 @@ class KeyboardHook:
         self._queue = queue.Queue(maxsize=256)
         self._thread = None
         self._thread_id = 0
+        self._hook = None
         self._ready = threading.Event()
         self._start_error = None
         self._suggest_queue = queue.Queue(maxsize=1)
@@ -137,6 +138,13 @@ class KeyboardHook:
             self._suggest_thread.join(timeout=3)
 
     def set_enabled(self, enabled: bool):
+        if enabled and self._thread is not None and not self._thread.is_alive():
+            self._enabled = False
+            try:
+                self.start()
+            except RuntimeError as error:
+                self.on_error(f"Keyboard unavailable: {error}")
+                return
         self._post(("enabled", bool(enabled)))
 
     def set_layout(self, layout: str):
@@ -166,8 +174,28 @@ class KeyboardHook:
             self._drain()
         return True
 
+    def _install_hook(self):
+        hook = user32.SetWindowsHookExW(13, self._callback, _kernel32.GetModuleHandleW(None), 0)
+        if not hook:
+            raise ctypes.WinError(ctypes.get_last_error())
+        previous, self._hook = self._hook, hook
+        if previous:
+            user32.UnhookWindowsHookEx(previous)
+
+    def _sync_keys(self):
+        # Secure desktops/sleep can hide key releases; do not retain a phantom Ctrl/Alt chord.
+        # Suppressed composing/F12 presses do not update Windows' asynchronous key state.
+        for key in (self._held & (_MODIFIERS | _SHIFTS)) | self._replay_keys | self._replayed_down:
+            if not user32.GetAsyncKeyState(key) & 0x8000:
+                self._held.discard(key)
+                self._suppressed.discard(key)
+                self._replay_keys.discard(key)
+                if key in self._replayed_down:
+                    self._replay(key, False)
+        self._chord = self._chord and bool(self._held & _MODIFIERS)
+
     def _run(self):
-        hook = timer = None
+        timer = None
         try:
             self._thread_id = int(_kernel32.GetCurrentThreadId())
             message = w.MSG()
@@ -186,12 +214,10 @@ class KeyboardHook:
                     except Exception as error:
                         self._enabled = False
                         self._post(("error", f"Keyboard paused: {error}"))
-                return user32.CallNextHookEx(hook, code, kind, address)
+                return user32.CallNextHookEx(self._hook, code, kind, address)
 
             self._callback = callback
-            hook = user32.SetWindowsHookExW(13, callback, _kernel32.GetModuleHandleW(None), 0)
-            if not hook:
-                raise ctypes.WinError(ctypes.get_last_error())
+            self._install_hook()
             timer = user32.SetTimer(None, 0, 100, None)
             self._ready.set()
             while True:
@@ -203,6 +229,7 @@ class KeyboardHook:
                 if message.message == _WAKE:
                     self._drain()
                 elif message.message == 0x113:
+                    self._sync_keys()
                     self._check_context()
                 else:
                     user32.TranslateMessage(ctypes.byref(message))
@@ -219,8 +246,9 @@ class KeyboardHook:
                     self.on_error(f"Release keyboard modifiers manually: {error}")
             if timer:
                 user32.KillTimer(None, timer)
-            if hook:
-                user32.UnhookWindowsHookEx(hook)
+            if self._hook:
+                user32.UnhookWindowsHookEx(self._hook)
+                self._hook = None
             self._thread_id = 0
             self._ready.set()
 
@@ -317,7 +345,11 @@ class KeyboardHook:
         kind = item[0]
         if kind in ("enabled", "toggle"):
             self._commit()
-            self._enabled = item[1] if kind == "enabled" else not self._enabled
+            enabled = item[1] if kind == "enabled" else not self._enabled
+            if enabled and self._hook:
+                self._install_hook()
+                self._sync_keys()
+            self._enabled = enabled
             self._publish()
         elif kind == "layout":
             self._commit()

@@ -1,4 +1,4 @@
-# JoyKeyboard 0.4.17
+# JoyKeyboard 0.4.18
 
 **Developed by Sohaib Islam Joy** · [Facebook](https://www.facebook.com/sohaib.islam1997)
 
@@ -14,7 +14,7 @@ Only **Google** and **Sherpa Bangla** are offered as voice engines. Whisper and 
 
 ## Install with one EXE
 
-Open **dist/0.4.17/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition and click **Prepare Sherpa Bangla** once; then use Sherpa without internet for Bangla. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
+Open **dist/0.4.18/JoyKeyboard-Setup.exe**. Quit any older running copy before opening the installed app. One installer EXE, no ZIP or separate Python/runtime download. Installs for your Windows account without administrator permission, with Start Menu shortcut and an uninstaller. Python, speech libraries, automatic pause detection and dictionaries are included. **Online voice typing works immediately with internet. Offline model weights are optional downloads:** open Preferences → Local recognition and click **Prepare Sherpa Bangla** once; then use Sherpa without internet for Bangla. Runtime files stay installed, avoiding extraction at every launch. Allow roughly 500 MB free installation space, plus optional models. Settings, learned words and downloaded models stay in `%LOCALAPPDATA%/JoyKeyboard`; uninstall preserves them.
 
 Installer's **Select Additional Tasks** page offers **Start JoyKeyboard when I sign in to Windows**, checked by default, plus an optional desktop shortcut. Change startup any time under **Preferences → Appearance & startup**. Both use the same HKCU Run entry. Startup displays the idle floating bar; it never starts recording automatically. Windows Startup Apps policies can override startup. App uses one instance per user.
 
@@ -104,6 +104,8 @@ No voice API key needed for these integrated modes. Official Google Cloud Speech
 ## Keyboard and tools
 
 **Avro + Bijoy keyboard layouts (0.4.17):** open **floating bar → language/layout menu → Keyboard layout**, or **Keyboard and tools → Keyboard layout**. Choose **Avro Phonetic** to type `ami` → `আমি`, or **Bijoy-style (UniJoy)** for compatible fixed key positions: `gfmd` → `আমি`, `hfQVf` → `বাংলা`, `djgN` → `ক্ষি`. Turn keyboard ON with its icon or **F12**, focus the destination app, type, then press **Space/Enter** to commit the pending word. Existing phonetic preferences remain valid. Screen keys also provide Avro/Bijoy modes with Shift, backspace and composition.
+
+**Keyboard recovery (0.4.18):** missed key releases after desktop switches/sleep no longer leave a phantom Ctrl/Alt/Shift state that bypasses Bangla conversion. The existing input-thread timer reconciles tracked keys with Windows' current state, preserving F12 hold suppression. Turning keyboard ON restarts a stopped input thread and installs a fresh native hook; a failed restart reports an error instead of showing keyboard ON. If Windows has removed the old hook, use the bar's keyboard button OFF then ON to recover. Modern Notepad/browser fields should use **Unicode** output. Bijoy ANSI output deliberately produces legacy character codes and needs a compatible font.
 
 Unicode is default. For legacy Bijoy fonts, choose **Preferences → Output encoding → Bijoy ANSI** separately; layout selection does not change encoding or voice settings. The Bijoy-style choice uses the open UniJoy variant, not every proprietary Bijoy edition: `x` produces ো, `gx` produces ও; AltGr/proprietary macros are outside this layout. See KEYBOARD-SOURCES.md for licensed keymap source and examples.
 
